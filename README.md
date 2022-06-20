@@ -59,4 +59,12 @@ a finite difference scheme very similar to the trapezium rule for function integ
 
 $$D \partial_t^2 C - v \partial_t C + R(C, 0) = 0$$
 
+$$C_{i-1} = C_i - \partial C|_i \Delta t + {1\over 2} \partial^2 C|_x \Delta t^2- {1\over 6} \partial^3 C|_i \Delta t^3 + O(\Delta t^4)$$
+
+$$C_{i+1} = C_i + \partial C|_i \Delta t + {1\over 2} \partial^2 C|_x \Delta t^2 + {1\over 6} \partial^3 C|_i \Delta t^3 + O(\Delta t^4)$$
+
+$$C_{i+1} + C_{i-1} = 2C_i + \partial^2 C|_i \Delta t^2 + O(\Delta x^4)$$
+
+$$\partial^2 C|_i = {{C_{i+1} - 2C_i + C_{i-1}} \over \Delta t^2}$$
+
 
