@@ -2,7 +2,7 @@
 
 theme := default
 # pandoc_input := README.md $(wildcard lit/*.md)
-pandoc_output := docs/index.html docs/diffusion.html
+pandoc_output := docs/index.html docs/diffusion.html docs/upwind-scheme.html docs/lheureux-model.html
 
 theme_dir := .entangled/templates/$(theme)
 pandoc_args += -s -t html5 -f markdown+fenced_code_attributes --toc --toc-depth 2
@@ -20,10 +20,17 @@ static_files := $(theme_dir)/theme.css $(theme_dir)/static
 static_targets := $(static_files:$(theme_dir)/%=docs/%)
 functional_deps := Makefile $(wildcard .entangled/scripts/*.lua) $(theme_dir)/template.html $(theme_dir)/syntax.theme
 
+# figure_src := $(wildcard fig/*)
+# figure_targets := $(figure_src:%=docs/%)
+
 site: $(pandoc_output) $(static_targets) $(figure_targets)
 
 clean:
 	rm -rf docs
+
+# $(figure_targets): docs/fig/%: fig/%
+# 	@mkdir -p $(@D)
+# 	cp $< $@
 
 $(static_targets): docs/%: $(theme_dir)/%
 	@mkdir -p $(@D)
