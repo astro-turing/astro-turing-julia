@@ -11,5 +11,6 @@ This repository contains example codes to solve numerical PDEs in Julia. The goa
 
 - [Diffusion equation](./diffusion.html)
 - [Advection equation](./upwind-scheme.html)
+- [Fiadeiro-Veronis scheme](./fiadeiro-veronis.html)
 - [l'Heureux model](./lheureux-model.html)
 

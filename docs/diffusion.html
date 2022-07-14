@@ -50,7 +50,7 @@
     code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
     code span.at { color: #7d9029; } /* Attribute */
     code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { } /* BuiltIn */
+    code span.bu { color: #008000; } /* BuiltIn */
     code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
     code span.ch { color: #4070a0; } /* Char */
     code span.cn { color: #880000; } /* Constant */
@@ -63,7 +63,7 @@
     code span.ex { } /* Extension */
     code span.fl { color: #40a070; } /* Float */
     code span.fu { color: #06287e; } /* Function */
-    code span.im { } /* Import */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
     code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
     code span.kw { color: #007020; font-weight: bold; } /* Keyword */
     code span.op { color: #666666; } /* Operator */
@@ -77,7 +77,9 @@
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
   <link rel="stylesheet" href="theme.css" />
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
@@ -105,130 +107,192 @@
         <div class="col-6 col-s-9" id="main">
 <section id="some-equations" class="level1">
 <h1>Some equations</h1>
-<p><span class="math display">\[\renewcommand{\vec}[1]{{\bf #1}}\]</span></p>
+<p><span class="math display">\[\renewcommand{\vec}[1]{{\bf
+#1}}\]</span></p>
 <p>Let’s solve the diffusion equation,</p>
-<p><span id="eq:diffusion" class="eqnos"><span class="math display">\[\partial_t u = a \partial_{xx} u.\]</span><span class="eqnos-number">(1)</span></span></p>
-<p>We may discretise the double space derivative using central differences,</p>
-<p><span id="eq:central-difference" class="eqnos"><span class="math display">\[\Delta x^2 \partial_{xx} u|_i = u_{i-1} - 2 u_{i} + u_{i+1}.\]</span><span class="eqnos-number">(2)</span></span></p>
-<p>For the time derivative we use a backward (implicit) Euler scheme,</p>
-<p><span id="eq:backward-euler" class="eqnos"><span class="math display">\[u_{j+1} = u_{j} + \Delta t \partial_t u |_{j+1}.\]</span><span class="eqnos-number">(3)</span></span></p>
+<p><span id="eq:diffusion" class="eqnos"><span
+class="math display">\[\partial_t u = a \partial_{xx}
+u.\]</span><span class="eqnos-number">(1)</span></span></p>
+<p>We may discretise the double space derivative using central
+differences,</p>
+<p><span id="eq:central-difference" class="eqnos"><span
+class="math display">\[\Delta x^2 \partial_{xx} u|_i = u_{i-1} - 2 u_{i}
++ u_{i+1}.\]</span><span class="eqnos-number">(2)</span></span></p>
+<p>For the time derivative we use a backward (implicit) Euler
+scheme,</p>
+<p><span id="eq:backward-euler" class="eqnos"><span
+class="math display">\[u_{j+1} = u_{j} + \Delta t \partial_t u
+|_{j+1}.\]</span><span class="eqnos-number">(3)</span></span></p>
 <p>Combining those gives,</p>
-<p><span id="eq:diffusion-discretised" class="eqnos"><span class="math display">\[u_{(i, j+1)} = u_{(i, j)} + {{a \Delta t} \over {\Delta x^2}} \Big(u_{(i-1, j+1)} - 2 u_{(i, j+1)} + u_{(i+1,j+1)}\Big).\]</span><span class="eqnos-number">(4)</span></span></p>
-<p>Now, writing our spatially discretized <span class="math inline">\(u_{i}\)</span> as a vector <span class="math inline">\(\vec{u}\)</span>, the above relation becomes a matrix equation,</p>
-<p><span id="eq:diffusion-matrix-form" class="eqnos"><span class="math display">\[\vec{u}_{j+1} = \vec{u}_{j} + {{a \Delta t} \over {\Delta x^2}} A \vec{u}_{j+1},\]</span><span class="eqnos-number">(5)</span></span></p>
-<p>where <span class="math inline">\(A\)</span> is the tri-diagonal matrix,</p>
-<p><span id="eq:central-difference-matrix" class="eqnos"><span class="math display">\[A = \begin{pmatrix} -2 &amp;  1 &amp;  0 &amp;  0 &amp; \dots\\
+<p><span id="eq:diffusion-discretised" class="eqnos"><span
+class="math display">\[u_{(i, j+1)} = u_{(i, j)} + {{a \Delta t} \over
+{\Delta x^2}} \Big(u_{(i-1, j+1)} - 2 u_{(i, j+1)} +
+u_{(i+1,j+1)}\Big).\]</span><span class="eqnos-number">(4)</span></span></p>
+<p>Now, writing our spatially discretized <span
+class="math inline">\(u_{i}\)</span> as a vector <span
+class="math inline">\(\vec{u}\)</span>, the above relation becomes a
+matrix equation,</p>
+<p><span id="eq:diffusion-matrix-form" class="eqnos"><span
+class="math display">\[\vec{u}_{j+1} = \vec{u}_{j} + {{a \Delta t} \over
+{\Delta x^2}} A
+\vec{u}_{j+1},\]</span><span class="eqnos-number">(5)</span></span></p>
+<p>where <span class="math inline">\(A\)</span> is the tri-diagonal
+matrix,</p>
+<p><span id="eq:central-difference-matrix" class="eqnos"><span
+class="math display">\[A = \begin{pmatrix} -2 &amp;  1 &amp;  0 &amp;  0
+&amp; \dots\\
                        1 &amp; -2 &amp;  1 &amp;  0 &amp; \dots\\
                        0 &amp;  1 &amp; -2 &amp;  1 &amp; \dots\\
                        0 &amp;  0 &amp;  1 &amp; -2 &amp; \dots\\
-                       \vdots &amp; \vdots &amp; \vdots &amp; \vdots &amp; \ddots\\
+                       \vdots &amp; \vdots &amp; \vdots &amp; \vdots
+&amp; \ddots\\
 \end{pmatrix}.\]</span><span class="eqnos-number">(6)</span></span></p>
-<p>This entire system can be written as a linear equation <span class="math inline">\(B \vec{u}_{i+1} = \vec{u}_{i}\)</span>, where <span class="math inline">\(B = I - cA\)</span>, and <span class="math inline">\(c = a\Delta t / \Delta x^2\)</span>. Note that we have assumed boundary conditions where <span class="math inline">\(u = 0\)</span> outside the domain.</p>
+<p>This entire system can be written as a linear equation <span
+class="math inline">\(B \vec{u}_{i+1} = \vec{u}_{i}\)</span>, where
+<span class="math inline">\(B = I - cA\)</span>, and <span
+class="math inline">\(c = a\Delta t / \Delta x^2\)</span>. Note that we
+have assumed boundary conditions where <span class="math inline">\(u =
+0\)</span> outside the domain.</p>
 </section>
 <section id="implementation" class="level1">
 <h1>Implementation</h1>
-<p>We solve equation <a href="#eq:diffusion">1</a> for a given diffusion coefficient <code>DIFFUSION</code> and a Gaussian peak initial condition with a width of <code>SIGMA0</code>. The domain is <span class="math inline">\([-1.0, 1.0]\)</span> over <code>GRID_SIZE</code> steps, and we integrate from <span class="math inline">\(t=0\)</span> to <span class="math inline">\(t=1\)</span> over <code>TIME_STEPS</code> number of steps.</p>
+<p>We solve equation <a href="#eq:diffusion">1</a> for a given diffusion
+coefficient <code>DIFFUSION</code> and a Gaussian peak initial condition
+with a width of <code>SIGMA0</code>. The domain is <span
+class="math inline">\([-1.0, 1.0]\)</span> over <code>GRID_SIZE</code>
+steps, and we integrate from <span class="math inline">\(t=0\)</span> to
+<span class="math inline">\(t=1\)</span> over <code>TIME_STEPS</code>
+number of steps.</p>
 <div class="named-code-block">
 <p>«diffusion-constants»</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> GRID_SIZE <span class="op">=</span> <span class="fl">50</span></span>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> GRID_SIZE <span class="op">=</span> <span class="fl">50</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> TIME_STEPS <span class="op">=</span> <span class="fl">100</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> SIGMA0 <span class="op">=</span> <span class="fl">0.1</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> DIFFUSION <span class="op">=</span> <span class="fl">0.05</span></span></code></pre></div>
 </div>
-<p>We need to solve for the matrix equation <span class="math inline">\(B y_{i+1} = y_{i}\)</span>, where <span class="math inline">\(B = I - cA\)</span>. This is a symmetric tri-diagonal system, one we create with <code>SymTridiagonal</code>. The center diagonal has values of <span class="math inline">\(1 + 2c\)</span> and the first off-diagonal <span class="math inline">\(-c\)</span>.</p>
+<p>We need to solve for the matrix equation <span
+class="math inline">\(B y_{i+1} = y_{i}\)</span>, where <span
+class="math inline">\(B = I - cA\)</span>. This is a symmetric
+tri-diagonal system, one we create with <code>SymTridiagonal</code>. The
+center diagonal has values of <span class="math inline">\(1 +
+2c\)</span> and the first off-diagonal <span
+class="math inline">\(-c\)</span>.</p>
 <div class="named-code-block">
 <p>«diffusion-linear-system»</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>positions <span class="op">=</span> <span class="dt">LinRange</span>(<span class="op">-</span><span class="fl">1.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">,</span> GRID_SIZE<span class="op">+</span><span class="fl">1</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>times <span class="op">=</span> <span class="dt">LinRange</span>(<span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">,</span> TIME_STEPS<span class="op">+</span><span class="fl">1</span>)</span>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>positions <span class="op">=</span> <span class="fu">LinRange</span>(<span class="op">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>, GRID_SIZE<span class="op">+</span><span class="fl">1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>times <span class="op">=</span> <span class="fu">LinRange</span>(<span class="fl">0.0</span>, <span class="fl">1.0</span>, TIME_STEPS<span class="op">+</span><span class="fl">1</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>delta_x <span class="op">=</span> <span class="fl">2.0</span> <span class="op">/</span> GRID_SIZE</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>delta_t <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> TIME_STEPS</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>y0 <span class="op">=</span> exp.(positions<span class="op">.^</span><span class="fl">2</span> <span class="op">./</span> (<span class="op">-</span><span class="fl">2</span><span class="op">*</span>SIGMA0<span class="op">^</span><span class="fl">2</span>))</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>y0 <span class="op">=</span> <span class="fu">exp</span>.(positions<span class="op">.^</span><span class="fl">2</span> <span class="op">./</span> (<span class="op">-</span><span class="fl">2</span><span class="op">*</span>SIGMA0<span class="op">^</span><span class="fl">2</span>))</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># y0 = positions .|&gt; x -&gt; abs(x) &gt; SIGMA0 ? 0 : 1   # alternative: step-function</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> DIFFUSION <span class="op">*</span> delta_t <span class="op">/</span> delta_x<span class="op">^</span><span class="fl">2</span> </span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> SymTridiagonal(fill(<span class="fl">1</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span>c<span class="op">,</span> GRID_SIZE<span class="op">+</span><span class="fl">1</span>)<span class="op">,</span> fill(<span class="op">-</span>c<span class="op">,</span> GRID_SIZE))</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>yn <span class="op">=</span> FunctionIterator(y <span class="op">-&gt;</span> B <span class="op">\</span> y<span class="op">,</span> y0)</span></code></pre></div>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> <span class="fu">SymTridiagonal</span>(<span class="fu">fill</span>(<span class="fl">1</span> <span class="op">+</span> <span class="fl">2</span><span class="op">*</span>c, GRID_SIZE<span class="op">+</span><span class="fl">1</span>), <span class="fu">fill</span>(<span class="op">-</span>c, GRID_SIZE))</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>yn <span class="op">=</span> <span class="fu">FunctionIterator</span>(y <span class="op">-&gt;</span> B <span class="op">\</span> y, y0)</span></code></pre></div>
 </div>
 <section id="main" class="level2">
 <h2>Main</h2>
-<p>In Julia you should always put code in a function. This way the compiler knows what to do up front.</p>
+<p>In Julia you should always put code in a function. This way the
+compiler knows what to do up front.</p>
 <div class="named-code-block">
 <p>file:src/diffusion.jl</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> LinearAlgebra<span class="op">:</span> SymTridiagonal</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> Printf<span class="op">:</span> <span class="pp">@printf</span></span>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">LinearAlgebra</span>: SymTridiagonal</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Printf</span>: @printf</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span>diffusion<span class="op">-</span>constants<span class="op">&gt;&gt;</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span><span class="kw">function</span><span class="op">-</span>iterator<span class="op">&gt;&gt;</span></span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span>snapshots<span class="op">&gt;&gt;</span></span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> main()</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">main</span>()</span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">&lt;&lt;</span>diffusion<span class="op">-</span>linear<span class="op">-</span>system<span class="op">&gt;&gt;</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="bu">Iterators</span>.map(Snapshot<span class="op">,</span> times<span class="op">,</span> yn)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="bu">Iterators</span>.<span class="fu">map</span>(Snapshot, times, yn)</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> s <span class="kw">in</span> every_n(result<span class="op">,</span> <span class="fl">50</span>)</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                print_snapshot(s<span class="op">,</span> positions)</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> s <span class="kw">in</span> <span class="fu">every_n</span>(result, <span class="fl">50</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                <span class="fu">print_snapshot</span>(s, positions)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>main()</span></code></pre></div>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">main</span>()</span></code></pre></div>
 </div>
 </section>
 <section id="snapshots" class="level2">
 <h2>Snapshots</h2>
-<p>We store our result in a series of snapshots, being a combination of time and solution. The <code>print_snapshot</code> function gives output that is suitable for visualisation with Gnuplot.</p>
+<p>We store our result in a series of snapshots, being a combination of
+time and solution. The <code>print_snapshot</code> function gives output
+that is suitable for visualisation with Gnuplot.</p>
 <div class="named-code-block">
 <p>«snapshots»</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Snapshot</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        t <span class="op">::</span> <span class="dt">Float64</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        y <span class="op">::</span> <span class="dt">Vector</span>{<span class="dt">Float64</span>}</span>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Snapshot</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        t <span class="op">::</span><span class="dt"> Float64</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        y <span class="op">::</span><span class="dt"> Vector{Float64}</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> print_snapshot(s<span class="op">::</span>Snapshot<span class="op">,</span> pos)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">print_snapshot</span>(s<span class="op">::</span><span class="dt">Snapshot</span>, pos)</span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="pp">@printf</span> <span class="st">&quot;# t = %f</span><span class="sc">\n</span><span class="st">&quot;</span> s.t</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> (x<span class="op">,</span> y) <span class="kw">in</span> zip(pos<span class="op">,</span> s.y)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (x, y) <span class="kw">in</span> <span class="fu">zip</span>(pos, s.y)</span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                <span class="pp">@printf</span> <span class="st">&quot;%f %f</span><span class="sc">\n</span><span class="st">&quot;</span> x y</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="pp">@printf</span> <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st">&quot;</span></span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 </div>
 </section>
 <section id="function-iterator" class="level2">
 <h2>Function iterator</h2>
-<p>Julia defines an <a href="https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration">interface for iterators</a>. I couldn’t find in the standard library, an iterator that iterates on a function ad infinitum, so let’s define one.</p>
+<p>Julia defines an <a
+href="https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration">interface
+for iterators</a>. I couldn’t find in the standard library, an iterator
+that iterates on a function ad infinitum, so let’s define one.</p>
 <div class="named-code-block">
 <p>«function-iterator»</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FunctionIterator</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        f <span class="op">::</span> <span class="dt">Function</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        arg <span class="op">::</span> <span class="dt">Any</span></span>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> FunctionIterator</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        f <span class="op">::</span><span class="dt"> Function</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        arg <span class="op">::</span><span class="dt"> Any</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">Base</span>.iterate(a<span class="op">::</span>FunctionIterator) <span class="op">=</span> (a.arg<span class="op">,</span> a.f(a.arg))</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">Base</span>.iterate(a<span class="op">::</span>FunctionIterator<span class="op">,</span> x) <span class="op">=</span> (x<span class="op">,</span> a.f(x))</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">Base</span>.IteratorSize(<span class="op">::</span>FunctionIterator) <span class="op">=</span> <span class="bu">Base</span>.IsInfinite()</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">Base</span>.<span class="fu">iterate</span>(a<span class="op">::</span><span class="dt">FunctionIterator</span>) <span class="op">=</span> (a.arg, a.<span class="fu">f</span>(a.arg))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">Base</span>.<span class="fu">iterate</span>(a<span class="op">::</span><span class="dt">FunctionIterator</span>, x) <span class="op">=</span> (x, a.<span class="fu">f</span>(x))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">Base</span>.<span class="fu">IteratorSize</span>(<span class="op">::</span><span class="dt">FunctionIterator</span>) <span class="op">=</span> <span class="bu">Base</span>.<span class="fu">IsInfinite</span>()</span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> every_n(iter<span class="op">,</span> n)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">Iterators</span>.map(first<span class="op">,</span> <span class="bu">Iterators</span>.partition(iter<span class="op">,</span> n))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">every_n</span>(iter, n)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">Iterators</span>.<span class="fu">map</span>(first, <span class="bu">Iterators</span>.<span class="fu">partition</span>(iter, n))</span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 </div>
-<p>Since we join this infinite iterator with the finite <code>times</code>, we get a finite output in the end. The <code>every_n</code> function takes an iterator and gives every <span class="math inline">\(n\)</span>-th item back.</p>
+<p>Since we join this infinite iterator with the finite
+<code>times</code>, we get a finite output in the end. The
+<code>every_n</code> function takes an iterator and gives every <span
+class="math inline">\(n\)</span>-th item back.</p>
 </section>
 </section>
 <section id="results" class="level1">
 <h1>Results</h1>
-<p><img src="fig/diffusion.svg" title="Diffusion in action" class="figure" alt="Diffusion in action" /></p>
+<p><img src="fig/diffusion.svg" title="Diffusion in action"
+class="figure" alt="Diffusion in action" /></p>
 </section>
         </div>
          <div class="col-3 col-s-3 menu" id="menu-container">
                 <div id="menu"><nav id="TOC" role="doc-toc">
                                 <ul>
-                                <li><a href="#some-equations">Some equations</a></li>
-                                <li><a href="#implementation">Implementation</a>
+                                <li><a href="#some-equations"
+                                id="toc-some-equations">Some
+                                equations</a></li>
+                                <li><a href="#implementation"
+                                id="toc-implementation">Implementation</a>
                                 <ul>
-                                <li><a href="#main">Main</a></li>
-                                <li><a href="#snapshots">Snapshots</a></li>
-                                <li><a href="#function-iterator">Function iterator</a></li>
+                                <li><a href="#main"
+                                id="toc-main">Main</a></li>
+                                <li><a href="#snapshots"
+                                id="toc-snapshots">Snapshots</a></li>
+                                <li><a href="#function-iterator"
+                                id="toc-function-iterator">Function
+                                iterator</a></li>
                                 </ul></li>
-                                <li><a href="#results">Results</a></li>
+                                <li><a href="#results"
+                                id="toc-results">Results</a></li>
                                 </ul>
                 </nav></div>
         </div> 

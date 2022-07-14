@@ -15,7 +15,9 @@
     ul.task-list{list-style: none;}
   </style>
   <link rel="stylesheet" href="theme.css" />
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
@@ -43,66 +45,153 @@
 <div class="row">
         <div class="col-6 col-s-9" id="main">
 <p>goal: Julia reproduction of L’Heureux paper.</p>
-<p>The paper introduces the model, which in the end boils down to four dimensionless equations to be solved:</p>
+<p>The paper introduces the model, which in the end boils down to four
+dimensionless equations to be solved:</p>
 <p><span class="math display">\[\begin{split}
-\partial_t C_A = -U\partial_x C_A - Da\big(&amp;(1 - C_A)C_A (\Omega_{DA} - \nu_1 \Omega_{PA}) \\
+\partial_t C_A = -U\partial_x C_A - Da\big(&amp;(1 - C_A)C_A
+(\Omega_{DA} - \nu_1 \Omega_{PA}) \\
         &amp; + \lambda C_A C_C (\Omega_{PC} - \nu_2 \Omega_{DC})\big)
 \end{split}\]</span></p>
 <p><span class="math display">\[\begin{split}
-\partial_t C_C = -U\partial_x C_C + Da\big(&amp;\lambda(1-C_C)C_C(\Omega_{PC} - \nu_2 \Omega_{DC}) \\ &amp;+ C_A C_C (\Omega_{DA} - \nu_1 \Omega_{PA})\big)
+\partial_t C_C = -U\partial_x C_C +
+Da\big(&amp;\lambda(1-C_C)C_C(\Omega_{PC} - \nu_2 \Omega_{DC}) \\ &amp;+
+C_A C_C (\Omega_{DA} - \nu_1 \Omega_{PA})\big)
 \end{split}\]</span></p>
 <p><span class="math display">\[\begin{split}
-\partial_t \hat{c_k} = &amp; -W \partial_x \hat{c_k} + {1 \over \phi} \partial_x\left(\phi d_k \partial_x \hat{c_k}\right) + Da {(1 - \phi) \over \phi} (\delta - \hat{c_k}) \\ &amp; \big(C_A (\Omega_{DA} - \nu_1 \Omega_{PA}) - \lambda C_C (\Omega_{PC} - \nu_2 \Omega_{DC})\big)
+\partial_t \hat{c_k} = &amp; -W \partial_x \hat{c_k} + {1 \over \phi}
+\partial_x\left(\phi d_k \partial_x \hat{c_k}\right) + Da {(1 - \phi)
+\over \phi} (\delta - \hat{c_k}) \\ &amp; \big(C_A (\Omega_{DA} - \nu_1
+\Omega_{PA}) - \lambda C_C (\Omega_{PC} - \nu_2 \Omega_{DC})\big)
 \end{split}\]</span></p>
 <p><span class="math display">\[\begin{split}
-\partial_t \phi = - \partial_x(W\phi) + d_{\phi} \partial^2_x \phi + Da(1 - \phi) \big(&amp;C_A(\Omega_{DA} - \nu_1\Omega_{PA}) - \\ &amp; \lambda C_C(\Omega_{PC} - \nu_2\Omega_{DC})\big)
+\partial_t \phi = - \partial_x(W\phi) + d_{\phi} \partial^2_x \phi +
+Da(1 - \phi) \big(&amp;C_A(\Omega_{DA} - \nu_1\Omega_{PA}) - \\ &amp;
+\lambda C_C(\Omega_{PC} - \nu_2\Omega_{DC})\big)
 \end{split}\]</span></p>
-<p>Where it should be noted that the third equation solves for two quantities, <span class="math inline">\(c_k\)</span> being a rescaled concentration of dissolved species, Ca and CO3. Both these quantities appear in the definitions of <span class="math inline">\(\Omega_i\)</span> (which are therefore functions of <span class="math inline">\(x\)</span>). The problem with these equations is that <span class="math inline">\(D_{\phi}\)</span> is very small compared to <span class="math inline">\(D_k\)</span>. This causes numerical instabilities when trying to solve these equations using of the shelf PDE methods.</p>
-<p>From section 2.8 of the paper we can learn that: - We should use a Fiadeiro-Veronis scheme to solve the advective diffusion equations, involving <span class="math inline">\(\hat{c_k}\)</span> and <span class="math inline">\(\phi\)</span>. The non-linear terms are estimated using the advanced projection method, evaluating terms at <span class="math inline">\(t + \Delta t/2\)</span> by Taylor expansion. - The advective equations, involving <span class="math inline">\(C_A\)</span> and <span class="math inline">\(C_C\)</span> are solved using an explicit upstream scheme. The gist of that method is that, since things are always moving in the same direction, we may use a forward Euler or RK4 time integration, and a cheap first order finite difference in <span class="math inline">\(x\)</span>: the velocity of thy neighbour will soon be yours. A time step of <span class="math inline">\(\Delta t \sim 5 \times 10^{-6}\)</span> was used.</p>
-<p>To see how the Fiadeiro-Veronis scheme works, we follow the book “Diagenetic Models and their Implementation” by Boudreau.</p>
+<p>Where it should be noted that the third equation solves for two
+quantities, <span class="math inline">\(c_k\)</span> being a rescaled
+concentration of dissolved species, Ca and CO3. Both these quantities
+appear in the definitions of <span
+class="math inline">\(\Omega_i\)</span> (which are therefore functions
+of <span class="math inline">\(x\)</span>). The problem with these
+equations is that <span class="math inline">\(D_{\phi}\)</span> is very
+small compared to <span class="math inline">\(D_k\)</span>. This causes
+numerical instabilities when trying to solve these equations using of
+the shelf PDE methods.</p>
+<p>From section 2.8 of the paper we can learn that:</p>
+<ul>
+<li>We should use a Fiadeiro-Veronis scheme to solve the advective
+diffusion equations, involving <span
+class="math inline">\(\hat{c_k}\)</span> and <span
+class="math inline">\(\phi\)</span>. The non-linear terms are estimated
+using the advanced projection method, evaluating terms at <span
+class="math inline">\(t + \Delta t/2\)</span> by Taylor expansion.</li>
+<li>The advective equations, involving <span
+class="math inline">\(C_A\)</span> and <span
+class="math inline">\(C_C\)</span> are solved using an explicit upstream
+scheme. The gist of that method is that, since things are always moving
+in the same direction, we may use a forward Euler or RK4 time
+integration, and a cheap first order finite difference in <span
+class="math inline">\(x\)</span>: the velocity of thy neighbour will
+soon be yours. A time step of <span class="math inline">\(\Delta t \sim
+5 \times 10^{-6}\)</span> was used.</li>
+</ul>
+<p>To see how the Fiadeiro-Veronis scheme works, we follow the book
+“Diagenetic Models and their Implementation” by Boudreau.</p>
 <section id="crash-course-in-numerical-pde" class="level2">
 <h2>Crash course in numerical PDE</h2>
-<p>It is illustrative to break down the very complicated equations we have into smaller parts and see what they do. Let’s start with an initial value problem for linear decay:</p>
+<p>It is illustrative to break down the very complicated equations we
+have into smaller parts and see what they do. Let’s start with an
+initial value problem for linear decay:</p>
 <p><span class="math display">\[\partial_t C = -k C\]</span></p>
-<p>We know this equation, saying that the rate of change is proportional to the current value of <span class="math inline">\(C\)</span>, should result in an exponential solution:</p>
+<p>We know this equation, saying that the rate of change is proportional
+to the current value of <span class="math inline">\(C\)</span>, should
+result in an exponential solution:</p>
 <p><span class="math display">\[C(t) = A \exp(-kt)\]</span></p>
-<p>Setting the initial condition <span class="math inline">\(C(0) = C_0\)</span>, we get <span class="math inline">\(A = C_0\)</span>. Can we obtain the same through numerical integration?</p>
-<p>Starting at <span class="math inline">\(t=0\)</span>, we may use a Taylor series expansion to estimate <span class="math inline">\(C\)</span> at <span class="math inline">\(t=\Delta t\)</span>:</p>
-<p><span class="math display">\[C_1 = C_0 + \partial_t C |_{t=0} \Delta t + O(\Delta t^2).\]</span></p>
+<p>Setting the initial condition <span class="math inline">\(C(0) =
+C_0\)</span>, we get <span class="math inline">\(A = C_0\)</span>. Can
+we obtain the same through numerical integration?</p>
+<p>Starting at <span class="math inline">\(t=0\)</span>, we may use a
+Taylor series expansion to estimate <span
+class="math inline">\(C\)</span> at <span class="math inline">\(t=\Delta
+t\)</span>:</p>
+<p><span class="math display">\[C_1 = C_0 + \partial_t C |_{t=0} \Delta
+t + O(\Delta t^2).\]</span></p>
 <p>Substituting the ODE into the expansion:</p>
-<p><span class="math display">\[C_1 = C_0 - k C_0 \Delta t + O(\Delta t^2).\]</span></p>
-<p>We can generate a series <span class="math inline">\(C_n\)</span>:</p>
-<p><span class="math display">\[C_{n+1} = C_n (1 - k\Delta t).\]</span></p>
-<p>Now, if we choose <span class="math inline">\(\Delta t\)</span> too big, <span class="math inline">\(\Delta t &gt; 1/k\)</span>, then suddenly our generated series will start to oscillate. This is definitely not what we want.</p>
-<p>We may go higher order and backward <span class="math inline">\(C(t - \Delta t)\)</span> approximates to:</p>
-<p><span class="math display">\[C_i = C_{i+1} - \partial_t C|_{x_{i+1}} \Delta t + \partial_t^2 C|_{x_{i+1}} \Delta t^2 + \dots\]</span></p>
+<p><span class="math display">\[C_1 = C_0 - k C_0 \Delta t + O(\Delta
+t^2).\]</span></p>
+<p>We can generate a series <span
+class="math inline">\(C_n\)</span>:</p>
+<p><span class="math display">\[C_{n+1} = C_n (1 - k\Delta
+t).\]</span></p>
+<p>Now, if we choose <span class="math inline">\(\Delta t\)</span> too
+big, <span class="math inline">\(\Delta t &gt; 1/k\)</span>, then
+suddenly our generated series will start to oscillate. This is
+definitely not what we want.</p>
+<p>We may go higher order and backward <span class="math inline">\(C(t -
+\Delta t)\)</span> approximates to:</p>
+<p><span class="math display">\[C_i = C_{i+1} - \partial_t C|_{x_{i+1}}
+\Delta t + \partial_t^2 C|_{x_{i+1}} \Delta t^2 + \dots\]</span></p>
 <p>Leads to,</p>
-<p><span class="math display">\[C_{i+1} = C_i + {\Delta t \over 2} \left(\partial_t C|_{x_i} + \partial_t C|_{x_{i+1}}\right),\]</span></p>
-<p>a finite difference scheme very similar to the trapezium rule for function integration. This method is second order implicit.</p>
+<p><span class="math display">\[C_{i+1} = C_i + {\Delta t \over 2}
+\left(\partial_t C|_{x_i} + \partial_t C|_{x_{i+1}}\right),\]</span></p>
+<p>a finite difference scheme very similar to the trapezium rule for
+function integration. This method is second order implicit.</p>
 </section>
 <section id="higher-order-ode" class="level2">
 <h2>Higher order ODE</h2>
 <p>Suppose we have an equation of the form:</p>
-<p><span class="math display">\[D \partial_t^2 C - v \partial_t C + R(C, 0) = 0\]</span></p>
-<p>We need a way to deal with second order derivatives: the central difference formula:</p>
-<p><span class="math display">\[C_{i-1} = C_i - \partial C|_i \Delta t + {1\over 2} \partial^2 C|_x \Delta t^2- {1\over 6} \partial^3 C|_i \Delta t^3 + O(\Delta t^4)\]</span></p>
-<p><span class="math display">\[C_{i+1} = C_i + \partial C|_i \Delta t + {1\over 2} \partial^2 C|_x \Delta t^2 + {1\over 6} \partial^3 C|_i \Delta t^3 + O(\Delta t^4)\]</span></p>
-<p><span class="math display">\[C_{i+1} + C_{i-1} = 2C_i + \partial^2 C|_i \Delta t^2 + O(\Delta x^4)\]</span></p>
-<p><span class="math display">\[\partial^2 C|_i = {{C_{i+1} - 2C_i + C_{i-1}} \over \Delta t^2}\]</span></p>
+<p><span class="math display">\[D \partial_t^2 C - v \partial_t C + R(C,
+0) = 0\]</span></p>
+<p>We need a way to deal with second order derivatives: the central
+difference formula:</p>
+<p><span class="math display">\[C_{i-1} = C_i - \partial C|_i \Delta t +
+{1\over 2} \partial^2 C|_x \Delta t^2- {1\over 6} \partial^3 C|_i \Delta
+t^3 + O(\Delta t^4)\]</span></p>
+<p><span class="math display">\[C_{i+1} = C_i + \partial C|_i \Delta t +
+{1\over 2} \partial^2 C|_x \Delta t^2 + {1\over 6} \partial^3 C|_i
+\Delta t^3 + O(\Delta t^4)\]</span></p>
+<p><span class="math display">\[C_{i+1} + C_{i-1} = 2C_i + \partial^2
+C|_i \Delta t^2 + O(\Delta x^4)\]</span></p>
+<p><span class="math display">\[\partial^2 C|_i = {{C_{i+1} - 2C_i +
+C_{i-1}} \over \Delta t^2}\]</span></p>
 <p>This leads to a discretisation of our equation as follows,</p>
-<p><span class="math display">\[D {{C_{i+1} - 2C_i + C_{i-1}} \over \Delta t^2} - v {{C_{i+1} - C_{i-1}} \over 2 \Delta x} + R(C_i, x_i) = 0\]</span></p>
-<p>Boudreau explains that this is only stable if <span class="math inline">\(v\Delta x / (2D) &lt; 1\)</span>. We can make it more stable by using a backwards difference formula, but then we have a very nice second order approximation for the diffusion part and only a first order one for the advection part. Fiadeiro and Veronis (1977) propose the following scheme:</p>
-<p><span id="eq:fiadeiro-veronis-scheme" class="eqnos"><span class="math display">\[D\Big({{C_{i+1} - 2C_{i} + C_{i-1}} \over {\Delta x^2}}\Big) - v \Big({{(1 - \sigma)C_{i+1} + 2\sigma C_i - (1+\sigma)C_{i-1}} \over {2\Delta x}}\Big) = 0,\]</span><span class="eqnos-number">(1)</span></span></p>
+<p><span class="math display">\[D {{C_{i+1} - 2C_i + C_{i-1}} \over
+\Delta t^2} - v {{C_{i+1} - C_{i-1}} \over 2 \Delta x} + R(C_i, x_i) =
+0\]</span></p>
+<p>Boudreau explains that this is only stable if <span
+class="math inline">\(v\Delta x / (2D) &lt; 1\)</span>. We can make it
+more stable by using a backwards difference formula, but then we have a
+very nice second order approximation for the diffusion part and only a
+first order one for the advection part. Fiadeiro and Veronis (1977)
+propose the following scheme:</p>
+<p><span id="eq:fiadeiro-veronis-scheme" class="eqnos"><span
+class="math display">\[D\Big({{C_{i+1} - 2C_{i} + C_{i-1}} \over {\Delta
+x^2}}\Big) - v \Big({{(1 - \sigma)C_{i+1} + 2\sigma C_i -
+(1+\sigma)C_{i-1}} \over {2\Delta x}}\Big) =
+0,\]</span><span class="eqnos-number">(1)</span></span></p>
 <p>where,</p>
-<p><span id="eq:fiadeiro-veronis-sigma" class="eqnos"><span class="math display">\[\sigma = \coth\Big({{v\Delta x} \over {2D}}\Big) - {{2D} \over {v\Delta x}}.\]</span><span class="eqnos-number">(2)</span></span></p>
-<p>The idea is that <span class="math inline">\(\sigma\)</span> interpolates smoothly between an upstream and central difference method. This behaviour is especially important when, depending on depth (in our 1-d model), the coefficients change: we’ll have regions that are dominated by diffusion and others that are dominated by advection.</p>
+<p><span id="eq:fiadeiro-veronis-sigma" class="eqnos"><span
+class="math display">\[\sigma = \coth\Big({{v\Delta x} \over {2D}}\Big)
+- {{2D} \over {v\Delta
+x}}.\]</span><span class="eqnos-number">(2)</span></span></p>
+<p>The idea is that <span class="math inline">\(\sigma\)</span>
+interpolates smoothly between an upstream and central difference method.
+This behaviour is especially important when, depending on depth (in our
+1-d model), the coefficients change: we’ll have regions that are
+dominated by diffusion and others that are dominated by advection.</p>
 </section>
         </div>
          <div class="col-3 col-s-3 menu" id="menu-container">
                 <div id="menu"><nav id="TOC" role="doc-toc">
                                 <ul>
-                                <li><a href="#crash-course-in-numerical-pde">Crash course in numerical PDE</a></li>
-                                <li><a href="#higher-order-ode">Higher order ODE</a></li>
+                                <li><a
+                                href="#crash-course-in-numerical-pde"
+                                id="toc-crash-course-in-numerical-pde">Crash
+                                course in numerical PDE</a></li>
+                                <li><a href="#higher-order-ode"
+                                id="toc-higher-order-ode">Higher order
+                                ODE</a></li>
                                 </ul>
                 </nav></div>
         </div> 

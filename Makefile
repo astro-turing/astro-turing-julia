@@ -2,7 +2,7 @@
 
 theme := default
 # pandoc_input := README.md $(wildcard lit/*.md)
-pandoc_output := docs/index.html docs/diffusion.html docs/upwind-scheme.html docs/lheureux-model.html
+pandoc_output := docs/index.html docs/diffusion.html docs/upwind-scheme.html docs/lheureux-model.html docs/fiadeiro-veronis.html
 
 theme_dir := .entangled/templates/$(theme)
 pandoc_args += -s -t html5 -f markdown+fenced_code_attributes --toc --toc-depth 2

@@ -50,7 +50,7 @@
     code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
     code span.at { color: #7d9029; } /* Attribute */
     code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { } /* BuiltIn */
+    code span.bu { color: #008000; } /* BuiltIn */
     code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
     code span.ch { color: #4070a0; } /* Char */
     code span.cn { color: #880000; } /* Constant */
@@ -63,7 +63,7 @@
     code span.ex { } /* Extension */
     code span.fl { color: #40a070; } /* Float */
     code span.fu { color: #06287e; } /* Function */
-    code span.im { } /* Import */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
     code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
     code span.kw { color: #007020; font-weight: bold; } /* Keyword */
     code span.op { color: #666666; } /* Operator */
@@ -77,7 +77,9 @@
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
   <link rel="stylesheet" href="theme.css" />
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
@@ -106,94 +108,124 @@
 <section id="some-equations" class="level1">
 <h1>Some equations</h1>
 <p>Consider the advection equation,</p>
-<p><span id="eq:advection" class="eqnos"><span class="math display">\[\partial_t u + a \partial_x u = 0.\]</span><span class="eqnos-number">(1)</span></span></p>
-<p>An <em>upwind scheme</em> solves for this equation by biasing towards values from which the flow is comming. We have two cases,</p>
-<p><span id="eq:upwind-scheme" class="eqnos"><span class="math display">\[\begin{cases}
-(u_{(i, j+1)} - u_{(i, j)})/{\Delta t} + a (u_{(i, j)} - u_{(i-1, j)})/{\Delta x} = 0 &amp; {\rm for} \ a &gt; 0\\
-(u_{(i, j+1)} - u_{(i, j)})/{\Delta t} + a (u_{(i+1, j)} - u_{(i, j)})/{\Delta x} = 0 &amp; {\rm for} \ a &lt; 0\\
+<p><span id="eq:advection" class="eqnos"><span
+class="math display">\[\partial_t u + a \partial_x u =
+0.\]</span><span class="eqnos-number">(1)</span></span></p>
+<p>An <em>upwind scheme</em> solves for this equation by biasing towards
+values from which the flow is comming. We have two cases,</p>
+<p><span id="eq:upwind-scheme" class="eqnos"><span
+class="math display">\[\begin{cases}
+(u_{(i, j+1)} - u_{(i, j)})/{\Delta t} + a (u_{(i, j)} - u_{(i-1,
+j)})/{\Delta x} = 0 &amp; {\rm for} \ a &gt; 0\\
+(u_{(i, j+1)} - u_{(i, j)})/{\Delta t} + a (u_{(i+1, j)} - u_{(i,
+j)})/{\Delta x} = 0 &amp; {\rm for} \ a &lt; 0\\
 \end{cases}.\]</span><span class="eqnos-number">(2)</span></span></p>
 <p>This reduces to</p>
-<p><span id="eq:general-upwind" class="eqnos"><span class="math display">\[u_{(i, j+1)} = u_{(i, j)} - c \Delta u_{\pm},\]</span><span class="eqnos-number">(3)</span></span></p>
-<p>where <span class="math inline">\(c = (a\Delta t / \Delta x)\)</span>, and <span class="math inline">\(\Delta u_{\pm}\)</span> is the finite difference component for the spacial derivatives.</p>
-<p>Let’s take <span class="math inline">\(a\)</span> to be a function <span class="math inline">\(a(x) = \sin(x)\)</span>.</p>
+<p><span id="eq:general-upwind" class="eqnos"><span
+class="math display">\[u_{(i, j+1)} = u_{(i, j)} - c \Delta
+u_{\pm},\]</span><span class="eqnos-number">(3)</span></span></p>
+<p>where <span class="math inline">\(c = (a\Delta t / \Delta
+x)\)</span>, and <span class="math inline">\(\Delta u_{\pm}\)</span> is
+the finite difference component for the spacial derivatives.</p>
+<p>Let’s take <span class="math inline">\(a\)</span> to be a function
+<span class="math inline">\(a(x) = \sin(x)\)</span>.</p>
 </section>
 <section id="implementation" class="level1">
 <h1>Implementation</h1>
-<p>We have a grid of <code>GRID_SIZE</code> intervals, <code>TIME_STEPS</code> number of steps between <span class="math inline">\(t=0.0\)</span> and <span class="math inline">\(t=1.0\)</span>, an initial condition of an offset gaussian, and an advection factor of <span class="math inline">\(1.0\)</span>.</p>
+<p>We have a grid of <code>GRID_SIZE</code> intervals,
+<code>TIME_STEPS</code> number of steps between <span
+class="math inline">\(t=0.0\)</span> and <span
+class="math inline">\(t=1.0\)</span>, an initial condition of an offset
+gaussian, and an advection factor of <span
+class="math inline">\(1.0\)</span>.</p>
 <div class="named-code-block">
 <p>«advection-constants»</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> GRID_SIZE <span class="op">=</span> <span class="fl">50</span></span>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> GRID_SIZE <span class="op">=</span> <span class="fl">50</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> TIME_STEPS <span class="op">=</span> <span class="fl">100</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> SIGMA0 <span class="op">=</span> <span class="fl">0.1</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> ADVECTION <span class="op">=</span> <span class="fl">1.0</span></span></code></pre></div>
 </div>
-<p>The scheme depends on the value of <span class="math inline">\(a\)</span> in equation <a href="#eq:advection">1</a>. We use a function that assumes <span class="math inline">\(a\)</span> is a running parameter.</p>
+<p>The scheme depends on the value of <span
+class="math inline">\(a\)</span> in equation <a
+href="#eq:advection">1</a>. We use a function that assumes <span
+class="math inline">\(a\)</span> is a running parameter.</p>
 <div class="named-code-block">
 <p>«upwind-delta-y»</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> delta_y(y<span class="op">::</span><span class="dt">Array</span>{T}<span class="op">,</span> a) <span class="kw">where</span> T</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> <span class="dt">Array</span>{T}(<span class="cn">undef</span><span class="op">,</span> length(y))</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> (i<span class="op">,</span> a) <span class="kw">in</span> enumerate(a)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                <span class="kw">if</span> i <span class="op">==</span> <span class="fl">1</span> <span class="op">||</span> i <span class="op">==</span> length(y)</span>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">delta_y</span>(y<span class="op">::</span><span class="dt">Array{T}</span>, a) <span class="kw">where</span> T</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> <span class="fu">Array</span><span class="dt">{T}</span>(<span class="cn">undef</span>, <span class="fu">length</span>(y))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (i, a) <span class="kw">in</span> <span class="fu">enumerate</span>(a)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> i <span class="op">==</span> <span class="fl">1</span> <span class="op">||</span> i <span class="op">==</span> <span class="fu">length</span>(y)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                        d[i] <span class="op">=</span> <span class="fl">0</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                <span class="kw">else</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                        d[i] <span class="op">=</span> a <span class="op">&lt;</span> <span class="fl">0</span> ? y[i<span class="op">+</span><span class="fl">1</span>] <span class="op">-</span> y[i] <span class="op">:</span> y[i] <span class="op">-</span> y[i<span class="op">-</span><span class="fl">1</span>]</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                <span class="kw">end</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                <span class="cf">end</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        d</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
 </div>
 <p>The rest is rather straight forward.</p>
 <div class="named-code-block">
 <p>«advection-upwind-scheme»</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>positions <span class="op">=</span> <span class="dt">LinRange</span>(<span class="op">-</span><span class="fl">1.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">,</span> GRID_SIZE<span class="op">+</span><span class="fl">1</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>times <span class="op">=</span> <span class="dt">LinRange</span>(<span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">,</span> TIME_STEPS<span class="op">+</span><span class="fl">1</span>)</span>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>positions <span class="op">=</span> <span class="fu">LinRange</span>(<span class="op">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>, GRID_SIZE<span class="op">+</span><span class="fl">1</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>times <span class="op">=</span> <span class="fu">LinRange</span>(<span class="fl">0.0</span>, <span class="fl">1.0</span>, TIME_STEPS<span class="op">+</span><span class="fl">1</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>delta_x <span class="op">=</span> <span class="fl">2.0</span> <span class="op">/</span> GRID_SIZE</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>delta_t <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> TIME_STEPS</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>y0 <span class="op">=</span> exp.((positions .<span class="op">-</span> <span class="fl">0.2</span>)<span class="op">.^</span><span class="fl">2</span> <span class="op">./</span> (<span class="op">-</span><span class="fl">2</span><span class="op">*</span>SIGMA0<span class="op">^</span><span class="fl">2</span>))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>y0 <span class="op">=</span> <span class="fu">exp</span>.((positions <span class="op">.-</span> <span class="fl">0.2</span>)<span class="op">.^</span><span class="fl">2</span> <span class="op">./</span> (<span class="op">-</span><span class="fl">2</span><span class="op">*</span>SIGMA0<span class="op">^</span><span class="fl">2</span>))</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># y0 = positions .|&gt; x -&gt; abs(x - 0.2) &gt; SIGMA0 ? 0.0 : 1.0   # alternative: step-function</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> ADVECTION <span class="op">*</span> sin.(positions <span class="op">.*</span> <span class="cn">pi</span>) <span class="op">*</span> delta_t <span class="op">/</span> delta_x</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> y <span class="op">-&gt;</span> y .<span class="op">-</span> c <span class="op">.*</span> delta_y(y<span class="op">,</span> c)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>yn <span class="op">=</span> FunctionIterator(f<span class="op">,</span> y0)</span></code></pre></div>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> ADVECTION <span class="op">*</span> <span class="fu">sin</span>.(positions <span class="op">.*</span> <span class="cn">pi</span>) <span class="op">*</span> delta_t <span class="op">/</span> delta_x</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> y <span class="op">-&gt;</span> y <span class="op">.-</span> c <span class="op">.*</span> <span class="fu">delta_y</span>(y, c)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>yn <span class="op">=</span> <span class="fu">FunctionIterator</span>(f, y0)</span></code></pre></div>
 </div>
 <section id="main-function" class="level2">
 <h2>Main function</h2>
 <p>We reuse much of the code from the diffusion example.</p>
 <div class="named-code-block">
 <p>file:src/advection.jl</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">using</span> Printf<span class="op">:</span> <span class="pp">@printf</span></span>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Printf</span>: @printf</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span>advection<span class="op">-</span>constants<span class="op">&gt;&gt;</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span><span class="kw">function</span><span class="op">-</span>iterator<span class="op">&gt;&gt;</span></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span>snapshots<span class="op">&gt;&gt;</span></span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span>upwind<span class="op">-</span>delta<span class="op">-</span>y<span class="op">&gt;&gt;</span></span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> main()</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">main</span>()</span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">&lt;&lt;</span>advection<span class="op">-</span>upwind<span class="op">-</span>scheme<span class="op">&gt;&gt;</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="bu">Iterators</span>.map(Snapshot<span class="op">,</span> times<span class="op">,</span> yn)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">for</span> s <span class="kw">in</span> every_n(result<span class="op">,</span> <span class="fl">50</span>)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                print_snapshot(s<span class="op">,</span> positions)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="bu">Iterators</span>.<span class="fu">map</span>(Snapshot, times, yn)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> s <span class="kw">in</span> <span class="fu">every_n</span>(result, <span class="fl">50</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                <span class="fu">print_snapshot</span>(s, positions)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>main()</span></code></pre></div>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="fu">main</span>()</span></code></pre></div>
 </div>
 </section>
 </section>
 <section id="results" class="level1">
 <h1>Results</h1>
-<p><img src="fig/advection.svg" title="Advection in action" class="figure" alt="Advection in action" /></p>
+<p><img src="fig/advection.svg" title="Advection in action"
+class="figure" alt="Advection in action" /></p>
 </section>
         </div>
          <div class="col-3 col-s-3 menu" id="menu-container">
                 <div id="menu"><nav id="TOC" role="doc-toc">
                                 <ul>
-                                <li><a href="#some-equations">Some equations</a></li>
-                                <li><a href="#implementation">Implementation</a>
+                                <li><a href="#some-equations"
+                                id="toc-some-equations">Some
+                                equations</a></li>
+                                <li><a href="#implementation"
+                                id="toc-implementation">Implementation</a>
                                 <ul>
-                                <li><a href="#main-function">Main function</a></li>
+                                <li><a href="#main-function"
+                                id="toc-main-function">Main
+                                function</a></li>
                                 </ul></li>
-                                <li><a href="#results">Results</a></li>
+                                <li><a href="#results"
+                                id="toc-results">Results</a></li>
                                 </ul>
                 </nav></div>
         </div> 
