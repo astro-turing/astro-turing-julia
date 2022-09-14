@@ -107,4 +107,31 @@ $$\partial_t C_C = -U \partial_x C_C + Da \xi_2,$$
 $$\partial_t \hat{c}_k = -W \partial_x \hat{c}_k + {1 \over \phi} \partial_x (\phi d_k \partial_x \hat{c}_k) + Da {{1 - \phi} \over \phi} (\delta - \hat{c}_k) \xi_3,$$
 $$\partial_t \phi = -\partial_x(W\phi) + d_{\phi}\partial_x^2\phi + Da(1 - \phi) \xi_4.$$
 
+We'll put all the parameters from Table 1 of the model into a big structure `Param` and develop functions on top of that.
 
+``` {.julia file=src/model.jl}
+struct Param
+    mu_a :: Float64
+    mu_w :: Float64
+    rho_a :: Float64
+    rho_c :: Float64
+    rho_t :: Float64
+    rho_w :: Float64
+    d_ca :: Float64
+    d_co3 :: Float64
+    beta :: Float64
+    b :: Float64
+    k_a :: Float64
+    k_c :: Float64
+    m :: Float64
+    n :: Float64
+    x_d :: Float64
+    h_d :: Float64
+    l :: Float64
+    s :: Float64
+    c0_a :: Float64
+    c0_c :: Float64
+    chat0_ca :: Float64
+    chat0_co3 :: Float64
+end
+```
