@@ -99,4 +99,12 @@ $$\sigma = \coth\Big({{v\Delta x} \over {2D}}\Big) - {{2D} \over {v\Delta x}}.$$
 
 The idea is that $\sigma$ interpolates smoothly between an upstream and central difference method. This behaviour is especially important when, depending on depth (in our 1-d model), the coefficients change: we'll have regions that are dominated by diffusion and others that are dominated by advection.
 
+## Implementation
+We take appart the set of equations, and put the complicated non-linear terms (at the ends in brackets) and call them $\xi_1 \dots \xi_4$. The first two equations are integrated using an explicit upwind scheme.
+
+$$\partial_t C_A = -U \partial_x C_A - Da \xi_1,$$
+$$\partial_t C_C = -U \partial_x C_C + Da \xi_2,$$
+$$\partial_t \hat{c}_k = -W \partial_x \hat{c}_k + {1 \over \phi} \partial_x (\phi d_k \partial_x \hat{c}_k) + Da {{1 - \phi} \over \phi} (\delta - \hat{c}_k) \xi_3,$$
+$$\partial_t \phi = -\partial_x(W\phi) + d_{\phi}\partial_x^2\phi + Da(1 - \phi) \xi_4.$$
+
 

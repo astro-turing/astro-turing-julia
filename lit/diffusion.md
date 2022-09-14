@@ -42,7 +42,7 @@ This entire system can be written as a linear equation $B \vec{u}_{i+1} = \vec{u
 We solve equation @eq:diffusion for a given diffusion coefficient `DIFFUSION` and a Gaussian peak initial condition with a width of `SIGMA0`. The domain is $[-1.0, 1.0]$ over `GRID_SIZE` steps, and we integrate from $t=0$ to $t=1$ over `TIME_STEPS` number of steps.
 
 ``` {.julia #diffusion-constants}
-const GRID_SIZE = 50
+const GRID_SIZE = 150
 const TIME_STEPS = 100
 const SIGMA0 = 0.1
 const DIFFUSION = 0.05

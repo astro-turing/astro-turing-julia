@@ -4,7 +4,7 @@ using LinearAlgebra: SymTridiagonal
 using Printf: @printf
 
 # ~\~ begin <<lit/diffusion.md|diffusion-constants>>[init]
-const GRID_SIZE = 50
+const GRID_SIZE = 150
 const TIME_STEPS = 100
 const SIGMA0 = 0.1
 const DIFFUSION = 0.05
