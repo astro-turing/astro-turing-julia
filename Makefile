@@ -5,7 +5,7 @@ theme := default
 pandoc_output := docs/index.html docs/diffusion.html docs/upwind-scheme.html docs/lheureux-model.html docs/fiadeiro-veronis.html
 
 theme_dir := .entangled/templates/$(theme)
-pandoc_args += -s -t html5 -f markdown+fenced_code_attributes --toc --toc-depth 2
+pandoc_args += -s -t html5 -f markdown+fenced_code_attributes+fenced_divs --toc --toc-depth 2
 pandoc_args += --template $(theme_dir)/template.html
 pandoc_args += --css theme.css
 pandoc_args += --mathjax

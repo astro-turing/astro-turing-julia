@@ -133,6 +133,7 @@ main()
 ```
 
 ## Result
+This method seems to yield good results, though at bigger $\Delta_t$ or $\Delta_x$ we are suffering from some numerical diffusivity.
 
 ``` {.gnuplot .hide file=scripts/adv-diff.gnuplot}
 set term svg

@@ -3,7 +3,7 @@
 :root {
         --primary-support: #66AACC;
         --secondary-support: #CCAA66;
-        --highlight: #CC44CC;
+        --highlight: #CC66AA;
 }
 
 /*** Colours ***/
@@ -148,6 +148,7 @@ header {
         background: var(--primary-support);
         border-radius: 5pt;
         margin: 0 20pt 0 20pt;
+        filter: drop-shadow(1px 1px 2px #00000020);
 }
 
 .named-code-block p {
@@ -194,12 +195,57 @@ header {
   padding: 15px;
 }
 
+.table {
+}
+
+.table table {
+        border-collapse: separate;
+        margin: 1em auto 1em auto;
+        padding: 0 0 5pt 0;
+        border-radius: 10pt;
+        background: #eee;
+        border: none;
+        border-spacing: 0;
+        filter: drop-shadow(2px 2px 2px #00000020);
+}
+
+.table table td {
+        padding: 4pt 15pt 2pt 15pt;
+        margin: 0;
+}
+
+.table table .header {
+        border-radius: 10pt;
+}
+
+.table th {
+        background: var(--primary-support);
+        color: #ffffff;
+        margin: 0;
+        padding: 5pt 15pt 5pt 15pt;
+        border: none;
+}
+
+.table .header th:first-child {
+        border-radius: 10pt 0 0 0;
+}
+
+.table .header th:last-child {
+        border-radius: 0 10pt 0 0;
+}
+
+.table .caption {
+        margin: 1em auto 1em auto;
+        text-align: center;
+}
+
+/*
 .header {
-  background-color: #9933cc;
+  background-color: var(--highlight);
   color: #ffffff;
   padding: 15px;
 }
-
+*/
 /** Menu *****************************/
 nav ul {
   list-style-type: none;
