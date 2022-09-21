@@ -100,26 +100,29 @@ $$\sigma = \coth\Big({{v\Delta x} \over {2D}}\Big) - {{2D} \over {v\Delta x}}.$$
 The idea is that $\sigma$ interpolates smoothly between an upstream and central difference method. This behaviour is especially important when, depending on depth (in our 1-d model), the coefficients change: we'll have regions that are dominated by diffusion and others that are dominated by advection.
 
 ## Implementation
-We take appart the set of equations, and put the complicated non-linear terms (at the ends in brackets) and call them $\xi_1 \dots \xi_4$. The first two equations are integrated using an explicit upwind scheme.
+We take appart the set of equations, and put the complicated non-linear terms (at the ends in brackets) and call them $\xi_1 \dots \xi_3$.
 
 $$\partial_t C_A = -U \partial_x C_A - Da \xi_1,$$
 $$\partial_t C_C = -U \partial_x C_C + Da \xi_2,$$
 $$\partial_t \hat{c}_k = -W \partial_x \hat{c}_k + {1 \over \phi} \partial_x (\phi d_k \partial_x \hat{c}_k) + Da {{1 - \phi} \over \phi} (\delta - \hat{c}_k) \xi_3,$$
-$$\partial_t \phi = -\partial_x(W\phi) + d_{\phi}\partial_x^2\phi + Da(1 - \phi) \xi_4.$$
+$$\partial_t \phi = -\partial_x(W\phi) + d_{\phi}\partial_x^2\phi + Da(1 - \phi) \xi_3.$$
+
+The first two equations are integrated using an explicit upwind scheme. The non-linear terms in the advection-diffusion equations can be linearised by first-order Taylor approximation, or advanced projection method.
 
 We'll put all the parameters from Table 1 of the model into a big structure `Param` and develop functions on top of that.
 
 ::: {.table .table-to-code}
 | Parameter             | Scenario A   | Scenario B   | Unit    | Field    |
-| ---------             | ----------   | ----------   | ----    | -----    |
-| $\mu_A$               | $100.09$     | $100.09$     | g/mol   | `mu_a`   |
-| $\mu_W$               | $18.45$      | $18.45$      | g/mol   | `mu_w`   |
-| $\rho_A$              | $2.950$      | $2.950$      | g/cm³   | `rho_a`  |
-| $\rho_C$              | $2.710$      | $2.710$      | g/cm³   | `rho_c`  |
-| $\rho_T$              | $2.8$        | $2.8$        | g/cm³   | `rho_t`  |
+| --------------------- | ------------ | ------------ | ------- | -------- |
+| $\mu_A$               | $100.09$     | $100.09$     | g/mol   | `μ_a`    |
+| $\mu_W$               | $18.45$      | $18.45$      | g/mol   | `μ_w`    |
+| $\rho_A$              | $2.950$      | $2.950$      | g/cm³   | `ρ_a`    |
+| $\rho_C$              | $2.710$      | $2.710$      | g/cm³   | `ρ_c`    |
+| $\rho_T$              | $2.8$        | $2.8$        | g/cm³   | `ρ_t`    |
+| $\rho_W$              | $1.023$      | $1.023$      | g/cm³   | `ρ_w`    |
 | $D_{\rm Ca}^0$        | $131.9$      | $131.9$      | cm²/a   | `d0_ca`  |
 | $D_{\rm CO3}^0$       | $272.6$      | $272.6$      | cm²/a   | `d0_co3` |
-| $\beta$               | $0.1$        | $0.01$       | cm/a    | `beta`   |
+| $\beta$               | $0.1$        | $0.01$       | cm/a    | `β`      |
 | $b$                   | $5$          | $10$         | 1/(kPa) | `b`      |
 | $K_A$                 | $10^{-6.19}$ | $10^{-6.19}$ | M²      | `k_a`    |
 | $K_C$                 | $10^{-6.37}$ | $10^{-6.37}$ | M²      | `k_c`    |
@@ -142,15 +145,15 @@ We'll put all the parameters from Table 1 of the model into a big structure `Par
 
 ``` {.julia file=src/model.jl}
 struct Param
-    mu_a :: Float64
-    mu_w :: Float64
-    rho_a :: Float64
-    rho_c :: Float64
-    rho_t :: Float64
-    rho_w :: Float64
+    μ_a :: Float64
+    μ_w :: Float64
+    ρ_a :: Float64
+    ρ_c :: Float64
+    ρ_t :: Float64
+    ρ_w :: Float64
     d0_ca :: Float64
     d0_co3 :: Float64
-    beta :: Float64
+    β :: Float64
     b :: Float64
     k_a :: Float64
     k_c :: Float64
@@ -168,15 +171,10 @@ struct Param
     c0_c :: Float64
     s0_ca :: Float64
     s0_co3 :: Float64
-    phi0 :: Float64
-    phi_in :: Float64            # initial porosity
-    phi_inf :: Float64           # set to 0.01, see p. 7 bottom left
-    g :: Float64                 # gravity, set to 9.8 m/s^2
-end
-
-struct Aux
-    x :: Vector{Float64}
-    theta :: Vector{Float64}
+    ϕ_inf :: Float64           # set to 0.01, see p. 7 bottom left
+    g :: Float64               # gravity, set to 9.81 m/s^2
+    ϕ_in :: Float64            # initial porosity
+    ϕ0 :: Float64
 end
 
 struct State
@@ -184,94 +182,114 @@ struct State
     c_c :: Vector{Float64}
     s_ca :: Vector{Float64}
     s_co3 :: Vector{Float64}
-    phi :: Vector{Float64}
+    ϕ :: Vector{Float64}
 end
-
-damkoehler_number(p::Param) = p.k_2 * p.d0_ca / p.s^2
-lambda(p::Param) = p.k_3 / p.k_2
-nu_1(p::Param) = p.k_1 / p.k_2
-nu_2(p::Param) = p.k_4 / p.k_3
-d_ca(p::Param, s::State) = 1.0 ./ (1 .- 2 .* log.(s.phi))
-d_co3(p::Param, s::State) = (p.d0_co3 / p.d0_ca) ./ (1 .- 2 .* log.(s.phi))
-
-# Equations 15: K
-conductivity(p::Param, phi::Float64) = beta * phi^3 / (1 - phi)^2 * conductivity_correction(phi)
-
-# Equation 17: F
-conductivity_correction(phi::Float64) = 1 - exp(10 - 10/phi)
-
-# Equation 24: H
-elastic_response(p::Param, phi_nr::Float64) = -1 / (p.b * (phi_nr - p.phi_inf))
-
-# Equation 25: D_phi, this function is taken as a constant in the diffusion terms
-# and is completely ignored in the advection terms.
-porosity_diffusion(p::Param, phi::Float64) =
-    (p.beta / p.b * p.g * p.rho_w) * phi^3 / (1 - phi) / (p.phi_in - p.phi_inf) *
-    conductivity_correction(phi)
-
-# This is strictly speaking a function of phi, but taken to be constant
-d_phi(p::Param) = porosity_diffusion(p, p.phi_in) / p.d0_ca
-x_star(p::Param) = p.d0_ca / p.s
-t_star(p::Param) = p.d0_ca / p.s^2
-function theta(p::Param, x::Float64)
-    x_prime = x * x_star(p)
-    if p.x_d < x_prime && x_prime < (p.x_d + p.h_d)
-        1
-    else
-        0
-    end
-end
-
-# § 2.5 states that rho_s is taken as a constant, therefore delta will be a constant
-rho_s(p::Param) = p.rho_t / (1 - p.c0_a * (1 - p.rho_t / p.rho_a) - p.c0_c * (1 - p.rho_t / p.rho_c))
-delta(p::Param) = rho_s(p) / (p.mu_a * sqrt(p.k_c))
-
-# Equation 45: TODO These contain many common subexpressions that can be eliminated
-omega_pa(p::Param, s::State) = (s.s_ca .* s.s_co3 .* (p.k_c / p.k_a) .- 1).^(p.m)
-omega_da(p::Param, s::State, aux::Aux) = (1 .- s.s_ca .* s.s_co3 .* (p.k_c / p.k_a)).^(p.m) .* aux.theta
-omega_pc(p::Param, s::State) = (s.s_ca .* s.s_co3 .- 1).^(p.n)
-omega_dc(p::Param, s::State) = (1 .- s.s_ca .* s.s_co3).^(p.n)
-
-# Equations 46 & 47: TODO reduce common subexpressions
-velocity_u(p::Param, s::State) =
-    1 - conductivity(p, p.phi0) / p.s * (1 - p.phi0) * (rho_s(p) / p.rho_w - 1) .+
-    conductivity.(p, s.phi) ./ p.s .* (1 .- s.phi) .* (rho_s(p) / p.rho_w - 1)
-
-velocity_w(p::Param, s::State) =
-    1 - conductivity(p, p.phi0) / p.s * (1 - p.phi0) * (rho_s(p) / p.rho_w - 1) .+
-    conductivity.(p, s.phi) ./ p.s .* (1 .- s.phi)^2 ./ s.phi .* (rho_s(p) / p.rho_w - 1)
 
 function partial(y)
     y   # TODO implement some representation of a differential operator
 end
 
-xi_1(p::Param, s::State, aux::Aux) =
-    (1 .- s.c_a) .* s.c_a .* (omega_da(p, s, a) .- nu_1(p) .* omega_pa(p, s)) +
-    lambda(p) .* s.c_a .* s.c_c .* (omega_pc(p, s) - nu_2(p) .* omega_dc(p, s))
-
-xi_2(p::Param, s::State, aux::Aux) = 
-
-pde_c_a(p::Param, s::State, aux::Aux) = -velocity_u(p, s) * partial(s.c_a) - damkoehler_number(p) .* xi_1(p, s, aux)
-pde_c_c(p::Param, s::State, aux::Aux) = -velocity_u(p, s) * partial(s.c_c) - damkoehler_number(p) .* xi_2(p, s, aux)
-
-# TODO expand derivative => partial(s.phi .* d_k(p)) * partial(s.s_<k>) + s.phi .* d_k(p) * partial_2(s.s_<k>)
-pde_s_ca(p::Param, s::State, aux::Aux) = 
-    -velocity_w(p, s) * partial(s.s_ca) + 
-    1 ./ s.phi * partial(s.phi .* d_ca(p, s) * partial(s.s_ca)) +
-    damkoehler_number(p) .* (1 .- s.phi) ./ s.phi .* (delta(p) .- s.s_ca) .* xi_3(p, s, aux)
-
-pde_s_co3(p::Param, s::State, aux::Aux) = 
-    -velocity_w(p, s) * partial(s.s_co3) + 
-    1 ./ s.phi * partial(s.phi .* d_co3(p, s) * partial(s.s_co3)) +
-    damkoehler_number(p) .* (1 .- s.phi) ./ s.phi .* (delta(p) .- s.s_co3) .* xi_3(p, s, aux)
-
-pde_phi(p::Param, s::State, aux::Aux) =
-    -partial(velocity_w(p, s) .* s.phi) + d_phi(p) * partial_2(s.phi) +
-    damkoehler_number(p) .* (1 - s.phi) .* xi_4(p, s, aux)
-
-function main()
+function partial_2(y)
+    y   # TODO implement some representation of a differential operator
 end
 
-main()
+SCENARIO_A(ϕ_in :: Float64, ϕ0 :: Float64) = Param(
+    100.09, 18.45, 2.950, 2.710, 2.8, 1.023, 131.9, 272.6, 0.1, 5, 10^(-6.19), 10^(-6.37),
+    1.0, 1.0, 0.1, 0.1, 2.48, 2.80, 50, 100, 500, 0.1, 0.6, 0.3, 0.326, 0.326, 0.01, 9.81,
+    ϕ_in, ϕ0)
+
+SCENARIO_B(ϕ_in :: Float64, ϕ0 :: Float64) = Param(
+    100.09, 18.45, 2.950, 2.710, 2.8, 1.023, 131.9, 272.6, 0.01, 10, 10^(-6.19), 10^(-6.37),
+    0.01, 0.01, 0.001, 0.001, 2.48, 2.80, 50, 100, 500, 0.01, 0.6, 0.3, 0.326, 0.326, 0.01, 9.81,
+    ϕ_in, ϕ0)
+
+function main(p::Param)
+    damkoehler_number = p.k_2 * p.d0_ca / p.s^2
+    λ = p.k_3 / p.k_2
+    ν_1 = p.k_1 / p.k_2
+    ν_2 = p.k_4 / p.k_3
+
+    # Equations 15: K
+    conductivity(ϕ::Float64) = p.β * ϕ^3 / (1 - ϕ)^2 * conductivity_correction(ϕ)
+
+    # Equation 17: F
+    conductivity_correction(ϕ::Float64) = 1 - exp(10 - 10/ϕ)
+
+    # Equation 24: H
+    elastic_response(ϕ_nr::Float64) = -1 / (p.b * (ϕ_nr - p.ϕ_inf))
+
+    # Equation 25: D_ϕ, this function is taken as a constant in the diffusion terms
+    # and is completely ignored in the advection terms.
+    porosity_diffusion(ϕ::Float64) =
+        (p.beta / p.b * p.g * p.ρ_w) * ϕ^3 / (1 - ϕ) / (p.ϕ_in - p.ϕ_inf) *
+        conductivity_correction(ϕ)
+
+    # This is strictly speaking a function of ϕ, but taken to be constant
+    d_ϕ = porosity_diffusion(p.ϕ_in) / p.d0_ca
+    x_star = p.d0_ca / p.s
+    t_star = p.d0_ca / p.s^2
+
+    function f_θ(x::Float64)
+        x_prime = x * x_star
+        if p.x_d < x_prime && x_prime < (p.x_d + p.h_d)
+            1
+        else
+            0
+        end
+    end
+
+    x = collect(LinRange(0.0, 1.0, 1024))
+    θ = f_θ(x)
+
+    # § 2.5 states that ρ_s is taken as a constant, therefore delta will be a constant
+    ρ_s = p.ρ_t / (1 - p.c0_a * (1 - p.ρ_t / p.ρ_a) - p.c0_c * (1 - p.ρ_t / p.ρ_c))
+    δ = ρ_s / (p.μ_a * sqrt(p.k_c))
+
+    # Functions of state
+    #######################################################
+    d_ca(s::State) = 1.0 ./ (1 .- 2 .* log.(s.ϕ))
+    d_co3(s::State) = (p.d0_co3 / p.d0_ca) ./ (1 .- 2 .* log.(s.ϕ))
+
+    # Equations 46 & 47: TODO reduce common subexpressions
+    velocity_u(s::State) =
+        1 - conductivity(p.ϕ0) / p.s * (1 - p.ϕ0) * (ρ_s / p.ρ_w - 1) .+
+        conductivity.(s.ϕ) ./ p.s .* (1 .- s.ϕ) .* (ρ_s / p.ρ_w - 1)
+    velocity_w(s::State) =
+        1 - conductivity(p.ϕ0) / p.s * (1 - p.ϕ0) * (ρ_s / p.ρ_w - 1) .+
+        conductivity.(s.ϕ) ./ p.s .* (1 .- s.ϕ)^2 ./ s.ϕ .* (ρ_s / p.ρ_w - 1)
+
+    Ω_pa(s::State) = (s.s_ca .* s.s_co3 .* (p.k_c / p.k_a) .- 1).^(p.m)
+    Ω_da(s::State) = (1 .- s.s_ca .* s.s_co3 .* (p.k_c / p.k_a)).^(p.m) .* θ
+    Ω_pc(s::State) = (s.s_ca .* s.s_co3 .- 1).^(p.n)
+    Ω_dc(s::State) = (1 .- s.s_ca .* s.s_co3).^(p.n)
+
+    ξ_1(s::State) =
+        (1 .- s.c_a) .* s.c_a .* (Ω_da(s) .- ν_1 .* Ω_pa(s)) .+
+        λ .* s.c_a .* s.c_c .* (Ω_pc(s) - ν_2 .* Ω_dc(s))
+    ξ_2(s::State) = 
+        λ .* (1 .- s.c_c) .* s.c_c .* (Ω_pc(s) - ν_2 .* Ω_dc(s)) .+
+        s.c_a .* s.c_c .* (Ω_da(s) - ν_1 .* Ω_pa(s))
+    ξ_3(s::State) =
+        s.c_a .* (Ω_da(s) .- ν_1 .* Ω_pa(s)) .-
+        λ .* s.c_c .* (Ω_pc(s) .- ν_2 .* Ω_dc(s))
+
+    # PDE
+    ###########################################################
+    pde_c_a(s::State) = -velocity_u(s) * partial(s.c_a) - damkoehler_number .* xi_1(s)
+    pde_c_c(s::State) = -velocity_u(s) * partial(s.c_c) - damkoehler_number .* xi_2(s)
+    pde_s_ca(s::State) = 
+        -velocity_w(s) * partial(s.s_ca) + 
+        1 ./ s.ϕ * (partial(s.ϕ .* d_ca(s)) * partial(s.s_ca) + s.ϕ .* d_ca(s) * partial_2(s.s_ca)) +
+        damkoehler_number .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* xi_3(s)
+    pde_s_co3(s::State) = 
+        -velocity_w(s) * partial(s.s_co3) + 
+        1 ./ s.ϕ * (partial(s.ϕ .* d_co3(s)) * partial(s.s_co3) + s.ϕ .* d_co3(s) * partial_2(s.s_co3)) +
+        damkoehler_number .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* xi_3(s)
+    pde_ϕ(s::State) =
+        -partial(velocity_w(s) .* s.ϕ) + d_ϕ(s) * partial_2(s.ϕ) +
+        damkoehler_number .* (1 - s.ϕ) .* xi_3(s)
+end
+
+main(SCENARIO_A(0.5, 0.6))
 ```
 
