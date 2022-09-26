@@ -1,5 +1,8 @@
 # ~\~ language=Julia filename=src/model.jl
 # ~\~ begin <<lit/lheureux-model.md|src/model.jl>>[init]
+using Printf: @printf
+using LinearAlgebra: Tridiagonal
+
 struct Param
     μ_a :: Float64
     μ_w :: Float64
@@ -59,8 +62,35 @@ SCENARIO_B(ϕ_in :: Float64, ϕ0 :: Float64) = Param(
     0.01, 0.01, 0.001, 0.001, 2.48, 2.80, 50, 100, 500, 0.01, 0.6, 0.3, 0.326, 0.326, 0.01, 9.81,
     ϕ_in, ϕ0)
 
+function diffusion_matrix(c_d :: Vector{T}) where T
+    Tridiagonal(-c_d[2:end],
+                1 .+ 2 .* c_d,
+                -c_d[1:end-1])
+end
+
+function advection_diffusion_matrix(c_a :: Vector{T}, c_d :: Vector{T}, sigma :: Vector{T}) where T
+    Tridiagonal((c_a.*(-sigma .- 1) .- c_d)[2:end],
+                1 .+ 2 .* c_d + 2 .* c_a .* sigma,
+                (c_a.*(-sigma .+ 1) .- c_d)[1:end-1])
+end
+
+"""
+Finite difference of an array `y` in an upwind scheme given velocities `a`
+"""
+function upwind_dy(y::Vector{T}, a::Vector{T}) where T <: Real
+    dy = Array{T}(undef, length(y))
+    for (i, a) in enumerate(a)
+            if i == 1 || i == length(y)
+                    dy[i] = 0
+            else
+                    dy[i] = a < 0 ? a * (y[i+1] - y[i]) : a * (y[i] - y[i-1])
+            end
+    end
+    dy
+end
+
 function main(p::Param)
-    damkoehler_number = p.k_2 * p.d0_ca / p.s^2
+    da = p.k_2 * p.d0_ca / p.s^2
     λ = p.k_3 / p.k_2
     ν_1 = p.k_1 / p.k_2
     ν_2 = p.k_4 / p.k_3
@@ -131,19 +161,26 @@ function main(p::Param)
 
     # PDE
     ###########################################################
-    pde_c_a(s::State) = -velocity_u(s) * partial(s.c_a) - damkoehler_number .* xi_1(s)
-    pde_c_c(s::State) = -velocity_u(s) * partial(s.c_c) - damkoehler_number .* xi_2(s)
+    function half_step(s::State)
+        u = velocity_u(s)
+        v = velocity_w(s)
+
+        c_a_half = upwind_dy(s.c_a, u)
+    end
+
+    pde_c_a(s::State) = -velocity_u(s) * partial(s.c_a) - da .* xi_1(s)
+    pde_c_c(s::State) = -velocity_u(s) * partial(s.c_c) - da .* xi_2(s)
     pde_s_ca(s::State) = 
         -velocity_w(s) * partial(s.s_ca) + 
         1 ./ s.ϕ * (partial(s.ϕ .* d_ca(s)) * partial(s.s_ca) + s.ϕ .* d_ca(s) * partial_2(s.s_ca)) +
-        damkoehler_number .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* xi_3(s)
+        da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* xi_3(s)
     pde_s_co3(s::State) = 
         -velocity_w(s) * partial(s.s_co3) + 
         1 ./ s.ϕ * (partial(s.ϕ .* d_co3(s)) * partial(s.s_co3) + s.ϕ .* d_co3(s) * partial_2(s.s_co3)) +
-        damkoehler_number .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* xi_3(s)
+        da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* xi_3(s)
     pde_ϕ(s::State) =
         -partial(velocity_w(s) .* s.ϕ) + d_ϕ(s) * partial_2(s.ϕ) +
-        damkoehler_number .* (1 - s.ϕ) .* xi_3(s)
+        da .* (1 - s.ϕ) .* xi_3(s)
 end
 
 main(SCENARIO_A(0.5, 0.6))
