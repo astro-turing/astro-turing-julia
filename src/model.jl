@@ -44,14 +44,6 @@ struct State
     ϕ :: Vector{Float64}
 end
 
-function partial(y)
-    y   # TODO implement some representation of a differential operator
-end
-
-function partial_2(y)
-    y   # TODO implement some representation of a differential operator
-end
-
 SCENARIO_A(ϕ_in :: Float64, ϕ0 :: Float64) = Param(
     100.09, 18.45, 2.950, 2.710, 2.8, 1.023, 131.9, 272.6, 0.1, 5, 10^(-6.19), 10^(-6.37),
     1.0, 1.0, 0.1, 0.1, 2.48, 2.80, 50, 100, 500, 0.1, 0.6, 0.3, 0.326, 0.326, 0.01, 9.81,
@@ -62,16 +54,19 @@ SCENARIO_B(ϕ_in :: Float64, ϕ0 :: Float64) = Param(
     0.01, 0.01, 0.001, 0.001, 2.48, 2.80, 50, 100, 500, 0.01, 0.6, 0.3, 0.326, 0.326, 0.01, 9.81,
     ϕ_in, ϕ0)
 
-function diffusion_matrix(c_d :: Vector{T}) where T
-    Tridiagonal(-c_d[2:end],
-                1 .+ 2 .* c_d,
-                -c_d[1:end-1])
+function diffusion_matrix(c_d :: Vector{T}) where T <: Real
+    Tridiagonal(c_d[2:end], -2 .* c_d, c_d[1:end-1])
 end
 
-function advection_diffusion_matrix(c_a :: Vector{T}, c_d :: Vector{T}, sigma :: Vector{T}) where T
-    Tridiagonal((c_a.*(-sigma .- 1) .- c_d)[2:end],
-                1 .+ 2 .* c_d + 2 .* c_a .* sigma,
-                (c_a.*(-sigma .+ 1) .- c_d)[1:end-1])
+function advection_matrix(c_a :: Vector{T}, sigma :: Vector{T}) where T <: Real
+    Tridiagonal((c_a.*(sigma .+ 1))[2:end],
+                2 .* c_a .* sigma,
+                (c_a.*(sigma .- 1))[1:end-1])
+end
+
+function double_div(f :: Vector{T}, g :: Vector{T}) where T <: Real
+    Tridiagonal(f[2:end] .* (g[1:end-1] + g[2:end]),
+                -f .* ()
 end
 
 """
@@ -89,7 +84,21 @@ function upwind_dy(y::Vector{T}, a::Vector{T}) where T <: Real
     dy
 end
 
-function main(p::Param)
+function clip(x, a, b)
+    x < a ? a : (x > b ? b : x)
+end
+
+function clip_ara_cal(ara, cal)
+    for (a, c) in zip(ara, cal)
+        if (1 - a - c < 0)
+            a = 1 - c
+        end
+        a = clip(a, 0, 1)
+        c = clip(c, 0, 1)
+    end
+end
+
+function main(p::Param, Δt::Float64, Δx::Float64)
     da = p.k_2 * p.d0_ca / p.s^2
     λ = p.k_3 / p.k_2
     ν_1 = p.k_1 / p.k_2
@@ -159,29 +168,48 @@ function main(p::Param)
         s.c_a .* (Ω_da(s) .- ν_1 .* Ω_pa(s)) .-
         λ .* s.c_c .* (Ω_pc(s) .- ν_2 .* Ω_dc(s))
 
+    function sigma_peclet(w, d)
+        c_f = (Δx/2) .* w ./ d
+        coth.(c_f) - 1 ./ c_f
+    end
+
     # PDE
     ###########################################################
     function half_step(s::State)
         u = velocity_u(s)
-        v = velocity_w(s)
+        w = velocity_w(s)
 
-        c_a_half = upwind_dy(s.c_a, u)
+        c_a_half = s.c_a + (Δt/(2*Δx)) .* upwind_dy(s.c_a, u) - (da * Δt/2) .* ξ_1(s)
+        c_c_half = s.c_a + (Δt/(2*Δx)) .* upwind_dy(s.c_c, u) - (da * Δt/2) .* ξ_2(s)
+        clip_ara_cal(c_a_half, c_c_half)
+
+        ϕ_half = clamp.(
+            s.ϕ - (Δt/(2*Δx))   .* (advection_matrix(-1, sigma_peclet(w, d_ϕ(s))) * (s.ϕ .* w)) .+ 
+                  (Δt/(4*Δx^2)) .* diffusion_matrix(d_ϕ(s)) .* s.ϕ .+
+                  (Δt*da/2) .* (1 .- s.ϕ) .* ξ_3(s),
+            p.ϵ, 1 - p.ϵ)
+        s_ca_half = ifelse.(
+            s.ϕ .<= p.ϵ,
+            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_ca(s))) * s.s_ca) .+
+                     (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s),
+            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_ca(s))) * s.s_ca) .+
+                     (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s))
     end
 
-    pde_c_a(s::State) = -velocity_u(s) * partial(s.c_a) - da .* xi_1(s)
-    pde_c_c(s::State) = -velocity_u(s) * partial(s.c_c) - da .* xi_2(s)
+    pde_c_a(s::State) = -velocity_u(s) * partial(s.c_a) - da .* ξ_1(s)
+    pde_c_c(s::State) = -velocity_u(s) * partial(s.c_c) - da .* ξ_2(s)
     pde_s_ca(s::State) = 
         -velocity_w(s) * partial(s.s_ca) + 
         1 ./ s.ϕ * (partial(s.ϕ .* d_ca(s)) * partial(s.s_ca) + s.ϕ .* d_ca(s) * partial_2(s.s_ca)) +
-        da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* xi_3(s)
+        da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s)
     pde_s_co3(s::State) = 
         -velocity_w(s) * partial(s.s_co3) + 
         1 ./ s.ϕ * (partial(s.ϕ .* d_co3(s)) * partial(s.s_co3) + s.ϕ .* d_co3(s) * partial_2(s.s_co3)) +
-        da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* xi_3(s)
+        da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s)
     pde_ϕ(s::State) =
         -partial(velocity_w(s) .* s.ϕ) + d_ϕ(s) * partial_2(s.ϕ) +
-        da .* (1 - s.ϕ) .* xi_3(s)
+        da .* (1 - s.ϕ) .* ξ_3(s)
 end
 
-main(SCENARIO_A(0.5, 0.6))
+main(SCENARIO_A(0.5, 0.6), 0.01, 0.1)
 # ~\~ end
