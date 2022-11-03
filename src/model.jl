@@ -80,6 +80,10 @@ function upwind_dy(y::Vector{T}, a::Vector{T}) where T <: Real
     dy
 end
 
+function grad(y::Vector{T}, Δx::T) where T <: Real
+    [(y[2] - y[1])/Δx; (y[2:end] - y[1:end-1]) / Δx]
+end
+
 function clip(x, a, b)
     x < a ? a : (x > b ? b : x)
 end
@@ -98,7 +102,7 @@ function clip_ara_cal(ara, cal)
     end
 end
 
-function propagators(p::Param, Δt::Float64, Δx::Float64)
+function propagators(p::Param, Δt::Float64, N::Int)
     da = p.k_2 * p.d0_ca / p.s^2
     λ = p.k_3 / p.k_2
     ν_1 = p.k_1 / p.k_2
@@ -133,7 +137,8 @@ function propagators(p::Param, Δt::Float64, Δx::Float64)
         end
     end
 
-    x = collect(LinRange(0.0, 1.0, 1024))
+    x = collect(LinRange(0.0, 1.0, N))
+    Δx = 1.0 / (N - 1)
     θ = f_θ.(x)
 
     # § 2.5 states that ρ_s is taken as a constant, therefore delta will be a constant
@@ -186,25 +191,34 @@ function propagators(p::Param, Δt::Float64, Δx::Float64)
 
         ϕ_half = clamp.(
             s.ϕ - (Δt/(2*Δx))   .* (advection_matrix(-1.0, sigma_peclet(w, d_ϕ)) * (s.ϕ .* w)) .+ 
-                  (Δt/(4*Δx^2)) .* diffusion_matrix(fill(d_ϕ, 1024)) .* s.ϕ .+
+                  (Δt/(4*Δx^2)) .* diffusion_matrix(fill(d_ϕ, N)) * s.ϕ .+
                   (Δt*da/2) .* (1 .- s.ϕ) .* ξ_3(s),
             p.ϵ, 1 - p.ϵ)
+
+        x = d_ca(s)
+        vel = w .- grad(x, Δx) - x ./ s.ϕ .* grad(s.ϕ, Δx)
         s_ca_half = ifelse.(
             s.ϕ .<= p.ϵ,
             s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_ca(s))) * s.s_ca) .+
                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s),
-            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_ca(s))) * s.s_ca) .+
+            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d_ca(s))) * s.s_ca) .+
+                     (Δt/(4*Δx^2)) .* (diffusion_matrix(x ./ s.ϕ) * s.s_ca) .+
                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s))
+
+        x = d_co3(s)
+        vel = w .- grad(x, Δx) - x ./ s.ϕ .* grad(s.ϕ, Δx)             
         s_co3_half = ifelse.(
             s.ϕ .<= p.ϵ,
             s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_co3(s))) * s.s_co3) .+
                         (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s),
-            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_co3(s))) * s.s_co3) .+
-                        (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s))
+            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d_co3(s))) * s.s_co3) .+
+                      (Δt/(4*Δx^2)) .* (diffusion_matrix(x ./ s.ϕ) * s.s_co3) .+
+                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s))
         State(c_a_half, c_c_half, s_ca_half, s_co3_half, ϕ_half)
     end
 
-    half_step
+    function full_step(s::State, s_half::State)
+    end
     # pde_c_a(s::State) = -velocity_u(s) * partial(s.c_a) - da .* ξ_1(s)
     # pde_c_c(s::State) = -velocity_u(s) * partial(s.c_c) - da .* ξ_2(s)
     # pde_s_ca(s::State) = 
@@ -220,17 +234,17 @@ function propagators(p::Param, Δt::Float64, Δx::Float64)
     #     da .* (1 - s.ϕ) .* ξ_3(s)
 end
 
-function initial_state(p::Param)
+function initial_state(p::Param, N::Int)
     ca_0 = p.s0_ca / sqrt(p.k_c)
     co3_0 = p.s0_co3 / sqrt(p.k_c)
-    State(fill(p.c0_a, 1024), fill(p.c0_c, 1024), fill(ca_0, 1024),
-          fill(co3_0, 1024), [p.ϕ0; fill(p.ϕ_in, 1023)])
+    State(fill(p.c0_a, N), fill(p.c0_c, N), fill(ca_0, N),
+          fill(co3_0, N), [p.ϕ0; fill(p.ϕ_in, N-1)])
 end
 
 function main()
     param = SCENARIO_A(0.5, 0.6)
-    half_step = propagators(param, 1e-6, 1.0/1023.0)
-    s = initial_state(param)
+    half_step = propagators(param, 1e-6, 201)
+    s = initial_state(param, 201)
     println(s)
     s2 = half_step(s)
     println(s2)
