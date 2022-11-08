@@ -145,7 +145,7 @@ We'll put all the parameters from Table 1 of the model into a big structure `Par
 
 ``` {.julia file=src/model.jl}
 using Printf: @printf
-using LinearAlgebra: Tridiagonal
+using LinearAlgebra: Tridiagonal, diag, I
 
 struct Param
     μ_a :: Float64
@@ -335,47 +335,64 @@ function propagators(p::Param, Δt::Float64, N::Int)
 
         ϕ_half = clamp.(
             s.ϕ - (Δt/(2*Δx))   .* (advection_matrix(-1.0, sigma_peclet(w, d_ϕ)) * (s.ϕ .* w)) .+ 
-                  (Δt/(4*Δx^2)) .* diffusion_matrix(fill(d_ϕ, N)) * s.ϕ .+
+                  (Δt/(2*Δx^2)) .* diffusion_matrix(fill(d_ϕ, N)) * s.ϕ .+
                   (Δt*da/2) .* (1 .- s.ϕ) .* ξ_3(s),
             p.ϵ, 1 - p.ϵ)
 
-        x = d_ca(s)
-        vel = w .- grad(x, Δx) - x ./ s.ϕ .* grad(s.ϕ, Δx)
+        d = d_ca(s)
+        vel = w .- grad(d, Δx) - d ./ s.ϕ .* grad(s.ϕ, Δx)
         s_ca_half = ifelse.(
             s.ϕ .<= p.ϵ,
-            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_ca(s))) * s.s_ca) .+
+            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d)) * s.s_ca) .+
                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s),
-            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d_ca(s))) * s.s_ca) .+
-                     (Δt/(4*Δx^2)) .* (diffusion_matrix(x ./ s.ϕ) * s.s_ca) .+
+            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d)) * s.s_ca) .+
+                     (Δt/(2*Δx^2)) .* (diffusion_matrix(d ./ s.ϕ) * s.s_ca) .+
                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s))
 
-        x = d_co3(s)
-        vel = w .- grad(x, Δx) - x ./ s.ϕ .* grad(s.ϕ, Δx)             
+        d = d_co3(s)
+        vel = w .- grad(d, Δx) - d ./ s.ϕ .* grad(s.ϕ, Δx)             
         s_co3_half = ifelse.(
             s.ϕ .<= p.ϵ,
-            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d_co3(s))) * s.s_co3) .+
-                        (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s),
-            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d_co3(s))) * s.s_co3) .+
-                      (Δt/(4*Δx^2)) .* (diffusion_matrix(x ./ s.ϕ) * s.s_co3) .+
+            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d)) * s.s_co3) .+
+                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s),
+            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d)) * s.s_co3) .+
+                      (Δt/(2*Δx^2)) .* (diffusion_matrix(d ./ s.ϕ) * s.s_co3) .+
                       (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s))
         State(c_a_half, c_c_half, s_ca_half, s_co3_half, ϕ_half)
     end
 
     function full_step(s::State, s_half::State)
+        u = velocity_u(s_half)
+        w = velocity_w(s_half)
+
+        c_a = s.c_a + (Δt/Δx) .* upwind_dy(s_half.c_a, u) - (da * Δt) .* ξ_1(s_half)
+        c_c = s.c_a + (Δt/Δx) .* upwind_dy(s_half.c_c, u) - (da * Δt) .* ξ_2(s_half)
+        clip_ara_cal(c_a, c_c)
+
+        ϕ_system = I - (Δt/Δx) .* advection_matrix(-w, sigma_peclet(w, d_ϕ)) +
+                       (Δt/Δx^2) .* diffusion_matrix(fill(d_ϕ, N)) -
+                       Δt .* diag(grad(w, Δx))
+        ϕ_react = (Δt*da) .* (1 .- s_half.ϕ) .* ξ_3(s_half),
+        ϕ = clamp.(ϕ_system\s.ϕ + ϕ_react, p.ϵ, 1 - p.ϵ)
+
+        d = d_ca(s_half)
+        vel = w .- grad(d, Δx) - x ./ s_half.ϕ .* grad(s_half.ϕ, Δx)
+        ca_system = I - (Δt/Δx) .* advection_matrix(vel, sigma_peclet(w, d)) .+
+                        (Δt/Δx^2) .* diffusion_matrix(d ./ s.ϕ)
+        ca_react = (Δt*da) .* (1 .- s_half.ϕ) ./ s_half.ϕ .* (δ .- s_half.s_ca) .* ξ_3(s_half)
+        s_ca = ca_system\s.s_ca + ca_react
+
+        d = d_co3(s_half)
+        vel = w .- grad(d, Δx) - x ./ s_half.ϕ .* grad(s_half.ϕ, Δx)
+        co3_system = I - (Δt/Δx) .* advection_matrix(vel, sigma_peclet(w, d)) .+
+                        (Δt/Δx^2) .* diffusion_matrix(d ./ s.ϕ)
+        co3_react = (Δt*da) .* (1 .- s_half.ϕ) ./ s_half.ϕ .* (δ .- s_half.s_co3) .* ξ_3(s_half)
+        s_co3 = co3_system\s.s_co3 + co3_react
+
+        State(c_a, c_c, s_ca, s_co3, ϕ)
     end
-    # pde_c_a(s::State) = -velocity_u(s) * partial(s.c_a) - da .* ξ_1(s)
-    # pde_c_c(s::State) = -velocity_u(s) * partial(s.c_c) - da .* ξ_2(s)
-    # pde_s_ca(s::State) = 
-    #     -velocity_w(s) * partial(s.s_ca) + 
-    #     1 ./ s.ϕ * (partial(s.ϕ .* d_ca(s)) * partial(s.s_ca) + s.ϕ .* d_ca(s) * partial_2(s.s_ca)) +
-    #     da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s)
-    # pde_s_co3(s::State) = 
-    #     -velocity_w(s) * partial(s.s_co3) + 
-    #     1 ./ s.ϕ * (partial(s.ϕ .* d_co3(s)) * partial(s.s_co3) + s.ϕ .* d_co3(s) * partial_2(s.s_co3)) +
-    #     da .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s)
-    # pde_ϕ(s::State) =
-    #     -partial(velocity_w(s) .* s.ϕ) + d_ϕ(s) * partial_2(s.ϕ) +
-    #     da .* (1 - s.ϕ) .* ξ_3(s)
+
+    (half_step, full_step)
 end
 
 function initial_state(p::Param, N::Int)
