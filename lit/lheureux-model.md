@@ -145,7 +145,8 @@ We'll put all the parameters from Table 1 of the model into a big structure `Par
 
 ``` {.julia file=src/model.jl}
 using Printf: @printf
-using LinearAlgebra: Tridiagonal, diag, I
+using LinearAlgebra: Tridiagonal, diagm, I
+using HDF5
 
 struct Param
     μ_a :: Float64
@@ -334,7 +335,7 @@ function propagators(p::Param, Δt::Float64, N::Int)
         clip_ara_cal(c_a_half, c_c_half)
 
         ϕ_half = clamp.(
-            s.ϕ - (Δt/(2*Δx))   .* (advection_matrix(-1.0, sigma_peclet(w, d_ϕ)) * (s.ϕ .* w)) .+ 
+            s.ϕ + (Δt/(2*Δx))   .* (advection_matrix(1.0, sigma_peclet(w, d_ϕ)) * (s.ϕ .* w)) .+ 
                   (Δt/(2*Δx^2)) .* diffusion_matrix(fill(d_ϕ, N)) * s.ϕ .+
                   (Δt*da/2) .* (1 .- s.ϕ) .* ξ_3(s),
             p.ϵ, 1 - p.ϵ)
@@ -343,9 +344,9 @@ function propagators(p::Param, Δt::Float64, N::Int)
         vel = w .- grad(d, Δx) - d ./ s.ϕ .* grad(s.ϕ, Δx)
         s_ca_half = ifelse.(
             s.ϕ .<= p.ϵ,
-            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d)) * s.s_ca) .+
+            s.s_ca + (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d)) * s.s_ca) .+
                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s),
-            s.s_ca - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d)) * s.s_ca) .+
+            s.s_ca + (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d)) * s.s_ca) .+
                      (Δt/(2*Δx^2)) .* (diffusion_matrix(d ./ s.ϕ) * s.s_ca) .+
                      (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_ca) .* ξ_3(s))
 
@@ -353,9 +354,9 @@ function propagators(p::Param, Δt::Float64, N::Int)
         vel = w .- grad(d, Δx) - d ./ s.ϕ .* grad(s.ϕ, Δx)             
         s_co3_half = ifelse.(
             s.ϕ .<= p.ϵ,
-            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d)) * s.s_co3) .+
+            s.s_co3 + (Δt/(2*Δx)) .* (advection_matrix(w, sigma_peclet(w, d)) * s.s_co3) .+
                       (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s),
-            s.s_co3 - (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d)) * s.s_co3) .+
+            s.s_co3 + (Δt/(2*Δx)) .* (advection_matrix(vel, sigma_peclet(w, d)) * s.s_co3) .+
                       (Δt/(2*Δx^2)) .* (diffusion_matrix(d ./ s.ϕ) * s.s_co3) .+
                       (Δt*da/2) .* (1 .- s.ϕ) ./ s.ϕ .* (δ .- s.s_co3) .* ξ_3(s))
         State(c_a_half, c_c_half, s_ca_half, s_co3_half, ϕ_half)
@@ -369,25 +370,26 @@ function propagators(p::Param, Δt::Float64, N::Int)
         c_c = s.c_a + (Δt/Δx) .* upwind_dy(s_half.c_c, u) - (da * Δt) .* ξ_2(s_half)
         clip_ara_cal(c_a, c_c)
 
-        ϕ_system = I - (Δt/Δx) .* advection_matrix(-w, sigma_peclet(w, d_ϕ)) +
-                       (Δt/Δx^2) .* diffusion_matrix(fill(d_ϕ, N)) -
-                       Δt .* diag(grad(w, Δx))
-        ϕ_react = (Δt*da) .* (1 .- s_half.ϕ) .* ξ_3(s_half),
-        ϕ = clamp.(ϕ_system\s.ϕ + ϕ_react, p.ϵ, 1 - p.ϵ)
+        _ξ_3 = ξ_3(s_half)
+        ϕ_system = I - (Δt/Δx) .* advection_matrix(w, sigma_peclet(w, d_ϕ)) -
+                       (Δt/Δx^2) .* diffusion_matrix(fill(d_ϕ, N)) +
+                       Δt .* diagm(grad(w, Δx))
+        ϕ_react = (Δt*da) .* (1 .- s_half.ϕ) .* _ξ_3
+        ϕ = clamp.(ϕ_system\s.ϕ .+ ϕ_react, p.ϵ, 1 - p.ϵ)
 
         d = d_ca(s_half)
         vel = w .- grad(d, Δx) - x ./ s_half.ϕ .* grad(s_half.ϕ, Δx)
-        ca_system = I - (Δt/Δx) .* advection_matrix(vel, sigma_peclet(w, d)) .+
+        ca_system = I - (Δt/Δx) .* advection_matrix(vel, sigma_peclet(w, d)) -
                         (Δt/Δx^2) .* diffusion_matrix(d ./ s.ϕ)
-        ca_react = (Δt*da) .* (1 .- s_half.ϕ) ./ s_half.ϕ .* (δ .- s_half.s_ca) .* ξ_3(s_half)
-        s_ca = ca_system\s.s_ca + ca_react
+        ca_react = (Δt*da) .* (1 .- s_half.ϕ) ./ s_half.ϕ .* (δ .- s_half.s_ca) .* _ξ_3
+        s_ca = ca_system\s.s_ca .+ ca_react
 
         d = d_co3(s_half)
         vel = w .- grad(d, Δx) - x ./ s_half.ϕ .* grad(s_half.ϕ, Δx)
-        co3_system = I - (Δt/Δx) .* advection_matrix(vel, sigma_peclet(w, d)) .+
-                        (Δt/Δx^2) .* diffusion_matrix(d ./ s.ϕ)
-        co3_react = (Δt*da) .* (1 .- s_half.ϕ) ./ s_half.ϕ .* (δ .- s_half.s_co3) .* ξ_3(s_half)
-        s_co3 = co3_system\s.s_co3 + co3_react
+        co3_system = I - (Δt/Δx) .* advection_matrix(vel, sigma_peclet(w, d)) -
+                         (Δt/Δx^2) .* diffusion_matrix(d ./ s.ϕ)
+        co3_react = (Δt*da) .* (1 .- s_half.ϕ) ./ s_half.ϕ .* (δ .- s_half.s_co3) .* _ξ_3
+        s_co3 = co3_system\s.s_co3 .+ co3_react
 
         State(c_a, c_c, s_ca, s_co3, ϕ)
     end
@@ -403,12 +405,35 @@ function initial_state(p::Param, N::Int)
 end
 
 function main()
+    fid = h5open("scenario-a.h5", "w")
     param = SCENARIO_A(0.5, 0.6)
-    half_step = propagators(param, 1e-6, 201)
+    half_step, full_step = propagators(param, 1e-6, 201)
     s = initial_state(param, 201)
-    println(s)
-    s2 = half_step(s)
-    println(s2)
+    out_aragonite = create_dataset(fid, "aragonite", Float64, (201, 101), chunk=(201,1))
+    out_calcite   = create_dataset(fid, "calcite", Float64, (201, 101), chunk=(201,1))
+    out_calcium   = create_dataset(fid, "calcium", Float64, (201, 101), chunk=(201,1))
+    out_carbonate = create_dataset(fid, "carbonate", Float64, (201, 101), chunk=(201,1))
+    out_porosity  = create_dataset(fid, "porosity", Float64, (201, 101), chunk=(201,1))
+
+    function write_snapshot(i::Int, s::State)
+        out_aragonite[:,i] = s.c_a
+        out_calcite[:,i] = s.c_c
+        out_calcium[:,i] = s.s_ca
+        out_carbonate[:,i] = s.s_co3
+        out_porosity[:,i] = s.ϕ
+    end
+    write_snapshot(1, s)
+
+    steps = 1000
+    save_every = steps ÷ 100
+    for i in 1:steps
+        h = half_step(s)
+        s = full_step(s, h)
+        if i % save_every == 0
+            write_snapshot(i ÷ save_every, s)
+        end
+    end
+    close(fid)
 end
 
 main()
